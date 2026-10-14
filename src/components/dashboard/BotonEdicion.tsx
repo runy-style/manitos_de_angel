@@ -25,7 +25,7 @@ export default function BotonEdicion({ nivelId, children, className = "", disabl
       {...resto}
       disabled={bloqueado || disabled}
       aria-disabled={bloqueado || disabled}
-      title={bloqueado ? "Solo lectura: solo la educadora a cargo de este nivel puede editar." : title}
+      title={bloqueado ? "Solo lectura: solo la educadora a cargo o administración pueden editar." : title}
       className={`${className} ${bloqueado ? "grayscale" : ""}`}
     >
       {bloqueado && <Lock className="size-4" />}

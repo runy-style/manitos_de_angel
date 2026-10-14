@@ -142,7 +142,7 @@ export default function VistaNominaParvulos({
           title={
             puedeEditar
               ? "Inscribir nuevo párvulo en este nivel"
-              : "Solo lectura: solo la educadora a cargo puede inscribir párvulos."
+              : "Solo lectura: solo la educadora a cargo o administración pueden inscribir párvulos."
           }
           className="boton-menta shrink-0 text-sm py-2.5"
         >
@@ -318,7 +318,7 @@ export default function VistaNominaParvulos({
                             title={
                               puedeEditar
                                 ? "Editar datos del párvulo"
-                                : "Solo lectura: solo la educadora del nivel puede editar."
+                                : "Solo lectura: solo la educadora del nivel o administración pueden editar."
                             }
                             className="grid size-8 place-items-center rounded-xl text-tinta-suave hover:bg-cielo-50 hover:text-cielo-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >

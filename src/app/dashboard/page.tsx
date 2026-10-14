@@ -53,6 +53,7 @@ export default async function PanelInicio() {
     timeZone: "America/Santiago",
   }).format(new Date());
 
+  const esAdmin = perfil.rol === "admin";
   const esEducadora = perfil.rol === "educadora";
   const primerNombre = perfil.nombre_completo.split(" ")[0];
 
@@ -75,22 +76,36 @@ export default async function PanelInicio() {
       {/* Permisos del usuario */}
       <section
         className={`flex items-start gap-4 rounded-3xl p-5 ring-1 animate-aparecer [animation-delay:80ms] ${
-          esEducadora ? "bg-menta-50 ring-menta-200" : "bg-cielo-50 ring-cielo-200"
+          esAdmin
+            ? "bg-sol-50 ring-sol-200"
+            : esEducadora
+            ? "bg-menta-50 ring-menta-200"
+            : "bg-cielo-50 ring-cielo-200"
         }`}
       >
         <span
           className={`grid size-12 shrink-0 place-items-center rounded-2xl ${
-            esEducadora ? "bg-menta-100 text-menta-600" : "bg-cielo-100 text-cielo-600"
+            esAdmin
+              ? "bg-sol-100 text-sol-600"
+              : esEducadora
+              ? "bg-menta-100 text-menta-600"
+              : "bg-cielo-100 text-cielo-600"
           }`}
         >
-          {esEducadora ? <ShieldCheck className="size-6" /> : <Eye className="size-6" />}
+          {esAdmin || esEducadora ? <ShieldCheck className="size-6" /> : <Eye className="size-6" />}
         </span>
         <div>
           <h2 className="text-lg font-semibold">
-            {esEducadora ? "Puedes editar tu nivel asignado" : "Modo solo lectura"}
+            {esAdmin
+              ? "Administrador del Sistema — Permisos Totales"
+              : esEducadora
+              ? "Puedes editar tu nivel asignado"
+              : "Modo solo lectura"}
           </h2>
           <p className="text-sm text-tinta-suave">
-            {esEducadora
+            {esAdmin
+              ? "Tienes permisos completos para inscribir párvulos, registrar asistencia, bitácoras y gestionar archivos en todos los niveles del jardín infantil."
+              : esEducadora
               ? perfil.nivel
                 ? `Registras asistencia, bitácoras, planificaciones y archivos de ${perfil.nivel.nombre}. Los demás niveles los ves en solo lectura.`
                 : "Aún no tienes un nivel asignado. Pide a la dirección que lo configure en tu perfil."
@@ -129,7 +144,7 @@ export default async function PanelInicio() {
                       <h3 className="text-xl font-semibold text-tinta">{nivel.nombre}</h3>
                       {editable ? (
                         <span className="insignia shrink-0 bg-white text-menta-600">
-                          <PencilLine className="size-3.5" /> Tu nivel
+                          <PencilLine className="size-3.5" /> {esAdmin ? "Acceso Total" : "Tu nivel"}
                         </span>
                       ) : (
                         <span className="insignia shrink-0 bg-white/70 text-tinta-suave">

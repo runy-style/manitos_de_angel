@@ -4,20 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
 
+import { puedeEditarNivel } from "@/lib/permisos";
+
 export type EstadoAccionBitacora = {
   ok?: boolean;
   error?: string;
   mensaje?: string;
 } | undefined;
-
-function usuarioPuedeEditar(
-  rol: string,
-  nivelUsuario: string | null,
-  nivelObjetivo: string,
-): boolean {
-  if (rol === "admin") return true;
-  return rol === "educadora" && nivelUsuario === nivelObjetivo;
-}
 
 export async function crearEntradaBitacora(
   _prev: EstadoAccionBitacora,
@@ -39,7 +32,7 @@ export async function crearEntradaBitacora(
     return { ok: false, error: "Todos los campos con asterisco son obligatorios." };
   }
 
-  if (!usuarioPuedeEditar(sesion.perfil.rol, sesion.perfil.nivel_id, nivel_id)) {
+  if (!puedeEditarNivel(sesion.perfil, nivel_id)) {
     return {
       ok: false,
       error: "Solo la educadora a cargo del nivel o administración pueden registrar observaciones.",
@@ -86,7 +79,7 @@ export async function actualizarEntradaBitacora(
     return { ok: false, error: "Todos los campos obligatorios deben estar completos." };
   }
 
-  if (!usuarioPuedeEditar(sesion.perfil.rol, sesion.perfil.nivel_id, nivel_id)) {
+  if (!puedeEditarNivel(sesion.perfil, nivel_id)) {
     return {
       ok: false,
       error: "No tienes permisos para modificar esta observación.",
@@ -122,7 +115,7 @@ export async function eliminarEntradaBitacora(
     return { ok: false, error: "Tu sesión ha expirado." };
   }
 
-  if (!usuarioPuedeEditar(sesion.perfil.rol, sesion.perfil.nivel_id, nivel_id)) {
+  if (!puedeEditarNivel(sesion.perfil, nivel_id)) {
     return {
       ok: false,
       error: "No tienes permisos para eliminar esta observación.",

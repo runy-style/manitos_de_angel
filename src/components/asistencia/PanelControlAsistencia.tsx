@@ -207,7 +207,7 @@ export default function PanelControlAsistencia({
           title={
             puedeEditar
               ? "Guardar asistencia del nivel"
-              : "Solo la educadora a cargo del nivel puede guardar cambios."
+              : "Solo la educadora a cargo del nivel o administración pueden guardar cambios."
           }
           className="boton-menta text-sm py-2.5 px-6 shadow-flotante"
         >

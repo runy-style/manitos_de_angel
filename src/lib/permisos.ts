@@ -9,6 +9,10 @@ export function puedeEditarNivel(
   perfil: Pick<Perfil, "rol" | "nivel_id"> | null | undefined,
   nivelId: string | null | undefined,
 ): boolean {
-  if (!perfil || !nivelId) return false;
+  if (!perfil) return false;
+  // El Administrador tiene acceso total a crear y editar en todos los niveles
+  if (perfil.rol === "admin") return true;
+  // La educadora solo puede editar si es su nivel asignado
+  if (!nivelId) return false;
   return perfil.rol === "educadora" && perfil.nivel_id === nivelId;
 }
