@@ -53,54 +53,67 @@ alter table public.bitacoras        enable row level security;
 alter table public.documentos_nivel enable row level security;
 alter table public.archivos_parvulo enable row level security;
 
--- 3. Lectura para personal con perfil
+-- 3. Lectura para personal con perfil (idempotente)
+drop policy if exists "personal lee niveles" on public.niveles;
 create policy "personal lee niveles" on public.niveles
   for select to authenticated using (public.mi_rol() is not null);
 
+drop policy if exists "personal lee perfiles" on public.perfiles;
 create policy "personal lee perfiles" on public.perfiles
   for select to authenticated using (id = auth.uid() or public.mi_rol() is not null);
 
+drop policy if exists "admin gestiona perfiles" on public.perfiles;
 create policy "admin gestiona perfiles" on public.perfiles
   for all to authenticated
   using (public.mi_rol() = 'admin')
   with check (public.mi_rol() = 'admin');
 
+drop policy if exists "personal lee parvulos" on public.parvulos;
 create policy "personal lee parvulos" on public.parvulos
   for select to authenticated using (public.mi_rol() is not null);
 
+drop policy if exists "personal lee asistencia" on public.asistencia;
 create policy "personal lee asistencia" on public.asistencia
   for select to authenticated using (public.mi_rol() is not null);
 
+drop policy if exists "personal lee bitacoras" on public.bitacoras;
 create policy "personal lee bitacoras" on public.bitacoras
   for select to authenticated using (public.mi_rol() is not null);
 
+drop policy if exists "personal lee documentos" on public.documentos_nivel;
 create policy "personal lee documentos" on public.documentos_nivel
   for select to authenticated using (public.mi_rol() is not null);
 
+drop policy if exists "personal lee archivos" on public.archivos_parvulo;
 create policy "personal lee archivos" on public.archivos_parvulo
   for select to authenticated using (public.mi_rol() is not null);
 
--- 4. Escritura solo para la educadora del nivel
+-- 4. Escritura solo para la educadora del nivel o admin
+drop policy if exists "educadora gestiona parvulos" on public.parvulos;
 create policy "educadora gestiona parvulos" on public.parvulos
   for all to authenticated
   using (public.es_educadora_de(nivel_id))
   with check (public.es_educadora_de(nivel_id));
 
+drop policy if exists "educadora gestiona asistencia" on public.asistencia;
 create policy "educadora gestiona asistencia" on public.asistencia
   for all to authenticated
   using (public.es_educadora_de(nivel_id))
   with check (public.es_educadora_de(nivel_id));
 
+drop policy if exists "educadora gestiona bitacoras" on public.bitacoras;
 create policy "educadora gestiona bitacoras" on public.bitacoras
   for all to authenticated
   using (public.es_educadora_de(nivel_id))
   with check (public.es_educadora_de(nivel_id));
 
+drop policy if exists "educadora gestiona documentos" on public.documentos_nivel;
 create policy "educadora gestiona documentos" on public.documentos_nivel
   for all to authenticated
   using (public.es_educadora_de(nivel_id))
   with check (public.es_educadora_de(nivel_id));
 
+drop policy if exists "educadora gestiona archivos" on public.archivos_parvulo;
 create policy "educadora gestiona archivos" on public.archivos_parvulo
   for all to authenticated
   using (exists (
