@@ -8,6 +8,32 @@
 
 create extension if not exists "pgcrypto" with schema extensions;
 
+-- Asegurar que al eliminar o modificar una educadora no se bloquee por registros históricos
+alter table public.asistencia
+  drop constraint if exists asistencia_registrado_por_fkey,
+  add constraint asistencia_registrado_por_fkey
+    foreign key (registrado_por) references public.perfiles(id) on delete set null;
+
+alter table public.bitacoras
+  drop constraint if exists bitacoras_educadora_id_fkey,
+  add constraint bitacoras_educadora_id_fkey
+    foreign key (educadora_id) references public.perfiles(id) on delete set null;
+
+alter table public.documentos_nivel
+  drop constraint if exists documentos_nivel_educadora_id_fkey,
+  add constraint documentos_nivel_educadora_id_fkey
+    foreign key (educadora_id) references public.perfiles(id) on delete set null;
+
+alter table public.archivos_parvulo
+  drop constraint if exists archivos_parvulo_educadora_id_fkey,
+  add constraint archivos_parvulo_educadora_id_fkey
+    foreign key (educadora_id) references public.perfiles(id) on delete set null;
+
+alter table public.licencias_medicas
+  drop constraint if exists licencias_medicas_revisado_por_fkey,
+  add constraint licencias_medicas_revisado_por_fkey
+    foreign key (revisado_por) references public.perfiles(id) on delete set null;
+
 -- 1. Crear nuevo usuario directamente (Auth + Perfiles) sin confirmación por correo
 create or replace function public.admin_crear_usuario(
   p_email text,
