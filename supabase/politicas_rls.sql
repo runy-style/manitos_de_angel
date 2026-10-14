@@ -125,8 +125,113 @@ create policy "educadora gestiona archivos" on public.archivos_parvulo
     where p.id = parvulo_id and public.es_educadora_de(p.nivel_id)
   ));
 
--- 5. La función del apoderado debe ser ejecutable por visitantes anónimos
-alter function public.consultar_ficha_apoderado(text) set search_path = public;
+-- 5. Función RPC Segura para Consulta del Apoderado mediante RUT del Párvulo
+create or replace function public.consultar_ficha_apoderado(p_rut text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_rut_limpio text;
+  v_parvulo record;
+  v_total_dias integer;
+  v_dias_presente integer;
+  v_porcentaje numeric(5,2);
+  v_asistencias jsonb;
+  v_bitacoras jsonb;
+  v_archivos jsonb;
+begin
+  -- Normalizar RUT (quitar puntos y espacios, pasar a mayúsculas)
+  v_rut_limpio := upper(replace(replace(trim(p_rut), '.', ''), ' ', ''));
+
+  select p.*, n.nombre as nivel_nombre
+  into v_parvulo
+  from public.parvulos p
+  join public.niveles n on n.id = p.nivel_id
+  where upper(replace(replace(trim(p.rut), '.', ''), ' ', '')) = v_rut_limpio
+    and p.activo = true
+  limit 1;
+
+  if not found then
+    return jsonb_build_object('encontrado', false, 'mensaje', 'No se encontró un párvulo activo con el RUT indicado.');
+  end if;
+
+  -- Calcular estadísticas de asistencia
+  select count(*), count(*) filter (where estado = 'presente')
+  into v_total_dias, v_dias_presente
+  from public.asistencia
+  where parvulo_id = v_parvulo.id;
+
+  if v_total_dias > 0 then
+    v_porcentaje := round((v_dias_presente::numeric / v_total_dias::numeric) * 100, 1);
+  else
+    v_porcentaje := 0;
+  end if;
+
+  -- Últimos 30 registros de asistencia
+  select coalesce(jsonb_agg( jsonb_build_object(
+    'fecha', a.fecha,
+    'estado', a.estado,
+    'observacion_dia', a.observacion_dia
+  ) order by a.fecha desc), '[]'::jsonb)
+  into v_asistencias
+  from (
+    select fecha, estado, observacion_dia
+    from public.asistencia
+    where parvulo_id = v_parvulo.id
+    order by fecha desc
+    limit 30
+  ) a;
+
+  -- Observaciones de bitácora visibles para el apoderado
+  select coalesce(jsonb_agg( jsonb_build_object(
+    'id', b.id,
+    'fecha', b.fecha,
+    'area_avance', b.area_avance,
+    'observacion', b.observacion,
+    'educadora', pf.nombre_completo
+  ) order by b.fecha desc), '[]'::jsonb)
+  into v_bitacoras
+  from public.bitacoras b
+  left join public.perfiles pf on pf.id = b.educadora_id
+  where b.parvulo_id = v_parvulo.id
+    and b.visible_apoderado = true;
+
+  -- Archivos y fotos compartidos con el apoderado
+  select coalesce(jsonb_agg( jsonb_build_object(
+    'id', ar.id,
+    'titulo', ar.titulo,
+    'categoria', ar.categoria,
+    'url', ar.drive_file_url,
+    'fecha', ar.created_at
+  ) order by ar.created_at desc), '[]'::jsonb)
+  into v_archivos
+  from public.archivos_parvulo ar
+  where ar.parvulo_id = v_parvulo.id
+    and ar.visible_apoderado = true;
+
+  return jsonb_build_object(
+    'encontrado', true,
+    'parvulo', jsonb_build_object(
+      'nombres', v_parvulo.nombres,
+      'apellidos', v_parvulo.apellidos,
+      'rut', v_parvulo.rut,
+      'nivel', v_parvulo.nivel_nombre,
+      'drive_folder_url', v_parvulo.drive_folder_url
+    ),
+    'estadisticas', jsonb_build_object(
+      'total_dias_registrados', v_total_dias,
+      'dias_presente', v_dias_presente,
+      'porcentaje_asistencia', v_porcentaje
+    ),
+    'asistencia_reciente', v_asistencias,
+    'bitacora', v_bitacoras,
+    'archivos', v_archivos
+  );
+end;
+$$;
+
 grant execute on function public.consultar_ficha_apoderado(text) to anon, authenticated;
 
 -- =====================================================================
