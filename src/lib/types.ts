@@ -29,6 +29,10 @@ export type EstadoLicencia = "pendiente" | "justificada" | "rechazada";
 
 export interface FichaApoderado {
   encontrado: boolean;
+  requiere_pin?: boolean;
+  pin_incorrecto?: boolean;
+  parvulo_nombre?: string;
+  rut?: string;
   mensaje?: string;
   parvulo?: {
     nombres: string;
@@ -36,6 +40,7 @@ export interface FichaApoderado {
     rut: string;
     nivel: string;
     drive_folder_url: string | null;
+    tiene_pin?: boolean;
   };
   estadisticas?: {
     total_dias_registrados: number;

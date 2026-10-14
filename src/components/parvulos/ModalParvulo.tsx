@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Folder, Loader2, Sparkles, User, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Folder, Loader2, Lock, Sparkles, User, X } from "lucide-react";
 import { guardarParvulo, type RespuestaAccion } from "@/app/actions/parvulos";
 import { formatearRut, limpiarRut, validarRut } from "@/lib/rut";
 import type { Nivel, Parvulo } from "@/lib/types";
@@ -232,6 +232,27 @@ export default function ModalParvulo({
                 placeholder="+56 9 1234 5678"
                 className="campo bg-white"
               />
+            </div>
+            <div>
+              <label htmlFor="modal-pin" className="etiqueta flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Lock className="size-3.5 text-sol-600" /> PIN de Acceso Apoderado
+                </span>
+                <span className="text-[10px] font-normal text-tinta-suave">4 dígitos numéricos</span>
+              </label>
+              <input
+                id="modal-pin"
+                name="pin_apoderado"
+                type="text"
+                maxLength={4}
+                inputMode="numeric"
+                defaultValue={parvuloEditar?.pin_apoderado || ""}
+                placeholder="Ej. 1234 (Vacío para acceso sin PIN)"
+                className="campo bg-white font-mono tracking-widest text-sm"
+              />
+              <p className="mt-1 text-[11px] text-tinta-suave">
+                Si configuras un PIN, el apoderado deberá ingresarlo junto al RUT para ver la ficha.
+              </p>
             </div>
           </div>
 

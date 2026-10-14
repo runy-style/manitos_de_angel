@@ -14,17 +14,20 @@ import {
   Heart,
   HeartPulse,
   Image as ImageIcon,
+  Lock,
   Megaphone,
   MessageCircle,
   Pin,
   Plus,
   Printer,
   Sparkles,
+  Unlock,
   User,
 } from "lucide-react";
 import type { FichaApoderado } from "@/lib/types";
 import ModalSubirLicencia from "./ModalSubirLicencia";
 import ModalSolicitarEntrevista from "./ModalSolicitarEntrevista";
+import ModalCambiarPinApoderado from "./ModalCambiarPinApoderado";
 
 interface Props {
   ficha: FichaApoderado;
@@ -115,6 +118,7 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
   >(totalComunicados > 0 ? "comunicados" : "avances");
   const [modalLicenciaAbierto, setModalLicenciaAbierto] = useState(false);
   const [modalEntrevistaAbierto, setModalEntrevistaAbierto] = useState(false);
+  const [modalPinAbierto, setModalPinAbierto] = useState(false);
 
   const porcentaje = Number(ficha.estadisticas?.porcentaje_asistencia ?? 0);
   const radio = 46;
@@ -143,7 +147,27 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
           <Sparkles className="size-4 text-sol-500" />
           Ficha oficial del párvulo · Actualizada en tiempo real
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {ficha.parvulo && (
+            <button
+              type="button"
+              onClick={() => setModalPinAbierto(true)}
+              className="boton-suave px-3.5 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"
+              title={ficha.parvulo.tiene_pin ? "Tu ficha está protegida con PIN. Puedes cambiarlo aquí." : "Protege tu ficha con un PIN de 4 dígitos."}
+            >
+              {ficha.parvulo.tiene_pin ? (
+                <>
+                  <Lock className="size-3.5 text-menta-600" />
+                  <span>PIN Activo</span>
+                </>
+              ) : (
+                <>
+                  <Unlock className="size-3.5 text-sol-600" />
+                  <span>Crear PIN</span>
+                </>
+              )}
+            </button>
+          )}
           {onConsultarOtro && (
             <button
               type="button"
@@ -924,6 +948,20 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
           onCerrar={() => setModalEntrevistaAbierto(false)}
           onExito={() => {
             setModalEntrevistaAbierto(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Modal para cambiar o crear PIN de seguridad */}
+      {modalPinAbierto && ficha.parvulo && (
+        <ModalCambiarPinApoderado
+          rutParvulo={ficha.parvulo.rut}
+          nombreParvulo={`${ficha.parvulo.nombres} ${ficha.parvulo.apellidos}`}
+          tienePinActual={Boolean(ficha.parvulo.tiene_pin)}
+          onCerrar={() => setModalPinAbierto(false)}
+          onExito={() => {
+            setModalPinAbierto(false);
             window.location.reload();
           }}
         />

@@ -9,12 +9,14 @@ import {
   Folder,
   FolderOpen,
   FolderX,
+  Lock,
   NotebookPen,
   Pencil,
   Phone,
   Plus,
   Power,
   Search,
+  Unlock,
   User,
   Users,
 } from "lucide-react";
@@ -265,6 +267,23 @@ export default function VistaNominaParvulos({
                         ) : (
                           <span className="text-xs text-tinta-suave/60">Sin apoderado</span>
                         )}
+                        <div className="mt-1">
+                          {p.pin_apoderado ? (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-md bg-menta-100/90 px-2 py-0.5 text-[11px] font-bold text-menta-800"
+                              title={`PIN apoderado: ${p.pin_apoderado}`}
+                            >
+                              <Lock className="size-2.5 text-menta-600" /> PIN: {p.pin_apoderado}
+                            </span>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500"
+                              title="Sin PIN asignado (consulta directa por RUT)"
+                            >
+                              <Unlock className="size-2.5 text-slate-400" /> Sin PIN
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Porcentaje Asistencia */}

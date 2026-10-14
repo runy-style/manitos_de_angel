@@ -15,15 +15,18 @@ export const metadata: Metadata = {
 };
 
 interface PaginaProps {
-  searchParams?: Promise<{ rut?: string }>;
+  searchParams?: Promise<{ rut?: string; pin?: string }>;
 }
 
 export default async function PaginaApoderado(props: PaginaProps) {
   const searchParams = (await props.searchParams) ?? {};
   const rutParam = searchParams.rut?.trim();
+  const pinParam = searchParams.pin?.trim();
 
   let ficha: FichaApoderado | null = null;
   let mensajeError: string | null = null;
+  let requierePin = false;
+  let nombreParvulo: string | undefined = undefined;
 
   if (rutParam) {
     if (!validarRut(rutParam)) {
@@ -32,13 +35,18 @@ export default async function PaginaApoderado(props: PaginaProps) {
       const supabase = await createClient();
       const { data, error } = await supabase.rpc("consultar_ficha_apoderado", {
         p_rut: normalizarRut(rutParam),
+        p_pin: pinParam || null,
       });
 
       if (error) {
         mensajeError = "Ocurrió un error al consultar los datos. Por favor intenta más tarde.";
       } else {
         const resultado = data as FichaApoderado;
-        if (!resultado?.encontrado) {
+        if (resultado?.requiere_pin && !resultado?.encontrado) {
+          requierePin = true;
+          nombreParvulo = resultado.parvulo_nombre;
+          mensajeError = resultado.mensaje ?? "Esta ficha está protegida con PIN de seguridad.";
+        } else if (!resultado?.encontrado) {
           mensajeError =
             resultado?.mensaje ?? "No se encontró un párvulo activo con el RUT indicado.";
         } else {
@@ -131,7 +139,10 @@ export default async function PaginaApoderado(props: PaginaProps) {
             <div className="mx-auto max-w-lg">
               <FormularioConsultaApoderado
                 rutInicial={rutParam}
+                pinInicial={pinParam}
                 errorInicial={mensajeError}
+                requierePinInicial={requierePin}
+                nombreParvulo={nombreParvulo}
               />
             </div>
 

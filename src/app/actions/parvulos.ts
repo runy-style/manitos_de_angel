@@ -32,6 +32,12 @@ export async function guardarParvulo(
   const nombreApoderado = String(formData.get("nombre_apoderado") ?? "").trim() || null;
   const telefonoApoderado = String(formData.get("telefono_apoderado") ?? "").trim() || null;
   const driveFolderUrl = String(formData.get("drive_folder_url") ?? "").trim() || null;
+  const pinApoderadoRaw = String(formData.get("pin_apoderado") ?? "").trim();
+  const pinApoderado = pinApoderadoRaw || null;
+
+  if (pinApoderado && !/^[0-9]{4}$/.test(pinApoderado)) {
+    return { ok: false, error: "El PIN de apoderado debe ser exactamente de 4 dígitos numéricos (ej. 1234)." };
+  }
 
   if (!nivelId) {
     return { ok: false, error: "Debes seleccionar un nivel para el párvulo." };
@@ -62,6 +68,7 @@ export async function guardarParvulo(
       .from("parvulos")
       .update({
         rut: rutNormalizado,
+        pin_apoderado: pinApoderado,
         nombres,
         apellidos,
         fecha_nacimiento: fechaNacimiento,
@@ -89,6 +96,7 @@ export async function guardarParvulo(
       .from("parvulos")
       .insert({
         rut: rutNormalizado,
+        pin_apoderado: pinApoderado,
         nombres,
         apellidos,
         fecha_nacimiento: fechaNacimiento,
@@ -178,9 +186,71 @@ export async function alternarEstadoParvulo(id: string, activoNuevo: boolean): P
   return { ok: true };
 }
 
+export async function actualizarPinParvuloAction(
+  parvuloId: string,
+  nuevoPin: string | null,
+): Promise<{ ok: boolean; error?: string; mensaje?: string }> {
+  const sesion = await obtenerSesion();
+  if (sesion.tipo !== "ok") {
+    return { ok: false, error: "Sesión no válida o expirada." };
+  }
+
+  const pinLimpio = nuevoPin?.trim() || null;
+  if (pinLimpio && !/^[0-9]{4}$/.test(pinLimpio)) {
+    return { ok: false, error: "El PIN debe tener exactamente 4 dígitos numéricos." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("parvulos")
+    .update({ pin_apoderado: pinLimpio })
+    .eq("id", parvuloId);
+
+  if (error) {
+    return { ok: false, error: `Error al actualizar PIN: ${error.message}` };
+  }
+
+  revalidarRutas();
+  return {
+    ok: true,
+    mensaje: pinLimpio ? `PIN actualizado a ${pinLimpio}` : "PIN eliminado exitosamente.",
+  };
+}
+
+export async function establecerPinApoderadoAction(
+  rut: string,
+  pinActual: string,
+  nuevoPin: string,
+): Promise<{ ok: boolean; error?: string; mensaje?: string }> {
+  const nuevoPinLimpio = nuevoPin.trim();
+  if (!/^[0-9]{4}$/.test(nuevoPinLimpio)) {
+    return { ok: false, error: "El nuevo PIN debe ser exactamente de 4 dígitos numéricos." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("establecer_pin_apoderado", {
+    p_rut: normalizarRut(rut),
+    p_pin_actual: pinActual.trim(),
+    p_nuevo_pin: nuevoPinLimpio,
+  });
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  const res = data as { ok?: boolean; error?: string; mensaje?: string };
+  if (!res?.ok) {
+    return { ok: false, error: res?.error || "No se pudo actualizar el PIN." };
+  }
+
+  revalidatePath("/apoderado");
+  return { ok: true, mensaje: res.mensaje || "PIN actualizado con éxito." };
+}
+
 function revalidarRutas() {
   revalidatePath("/dashboard/parvulos");
   revalidatePath("/dashboard/asistencia");
   revalidatePath("/dashboard/estadisticas");
   revalidatePath("/dashboard");
+  revalidatePath("/apoderado");
 }
