@@ -6,6 +6,8 @@ import Link from "next/link";
 import {
   Calendar,
   CalendarCheck,
+  CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   ExternalLink,
   FileText,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import type { FichaApoderado } from "@/lib/types";
 import ModalSubirLicencia from "./ModalSubirLicencia";
+import ModalSolicitarEntrevista from "./ModalSolicitarEntrevista";
 
 interface Props {
   ficha: FichaApoderado;
@@ -70,8 +73,9 @@ const ESTILOS_AREA: Record<string, { bg: string; texto: string; borde: string }>
 };
 
 export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props) {
-  const [pestana, setPestana] = useState<"avances" | "asistencia" | "archivos" | "licencias">("avances");
+  const [pestana, setPestana] = useState<"avances" | "asistencia" | "archivos" | "licencias" | "entrevistas">("avances");
   const [modalLicenciaAbierto, setModalLicenciaAbierto] = useState(false);
+  const [modalEntrevistaAbierto, setModalEntrevistaAbierto] = useState(false);
 
   const porcentaje = Number(ficha.estadisticas?.porcentaje_asistencia ?? 0);
   const radio = 46;
@@ -86,6 +90,7 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
   const totalAvances = ficha.bitacora?.length ?? 0;
   const totalArchivos = ficha.archivos?.length ?? 0;
   const totalLicencias = ficha.licencias?.length ?? 0;
+  const totalEntrevistas = ficha.entrevistas?.length ?? 0;
 
   function imprimirFicha() {
     window.print();
@@ -241,6 +246,19 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
         >
           <HeartPulse className="size-4" />
           Licencias Médicas {totalLicencias > 0 && `(${totalLicencias})`}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPestana("entrevistas")}
+          className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition ${
+            pestana === "entrevistas"
+              ? "bg-sol-500 text-white shadow-suave"
+              : "text-tinta hover:bg-white/80"
+          }`}
+        >
+          <CalendarDays className="size-4" />
+          Agenda Entrevistas {totalEntrevistas > 0 && `(${totalEntrevistas})`}
         </button>
       </nav>
 
@@ -509,6 +527,135 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
         </section>
       )}
 
+      {/* Sección 5: Agenda de Entrevistas y Actas PDF */}
+      {pestana === "entrevistas" && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-bold text-tinta flex items-center gap-2">
+                <CalendarDays className="size-5 text-sol-500" />
+                Agenda y Actas de Entrevistas
+              </h2>
+              <p className="text-xs text-tinta-suave">
+                Coordina reuniones con la educadora de nivel y consulta las actas oficiales de acuerdos.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setModalEntrevistaAbierto(true)}
+              className="boton-sol px-4 py-2 text-xs font-bold shadow-xs inline-flex items-center gap-2"
+            >
+              <CalendarPlus className="size-4" /> Solicitar Entrevista
+            </button>
+          </div>
+
+          {totalEntrevistas > 0 ? (
+            <div className="space-y-4">
+              {ficha.entrevistas!.map((e) => {
+                const fechaFormateada = new Date(`${e.fecha}T12:00:00`).toLocaleDateString("es-CL", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                });
+
+                const badgeEstado =
+                  e.estado === "realizada"
+                    ? "bg-menta-100 text-menta-700 border-menta-200"
+                    : e.estado === "confirmada"
+                    ? "bg-cielo-100 text-cielo-700 border-cielo-200"
+                    : e.estado === "cancelada"
+                    ? "bg-slate-100 text-slate-600 border-slate-200"
+                    : "bg-sol-100 text-sol-700 border-sol-200";
+
+                const textoEstado =
+                  e.estado === "realizada"
+                    ? "Realizada · Con Acta"
+                    : e.estado === "confirmada"
+                    ? "Confirmada / Agendada"
+                    : e.estado === "cancelada"
+                    ? "Cancelada"
+                    : "Solicitud Pendiente";
+
+                return (
+                  <article
+                    key={e.id}
+                    className="rounded-3xl border border-white/90 bg-white/95 p-6 shadow-suave space-y-4 transition hover:shadow-flotante"
+                  >
+                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-cielo-50 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="capitalize font-bold text-sm text-tinta">{fechaFormateada}</span>
+                        <span className="text-xs text-tinta-suave">a las {e.hora} hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badgeEstado}`}>
+                          {textoEstado}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 uppercase">
+                          {e.modalidad}
+                        </span>
+                      </div>
+                    </header>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-tinta-suave">
+                        {e.solicitado_por === "apoderado" ? "Solicitada por el apoderado" : "Citación de la educadora"}
+                      </p>
+                      <p className="text-sm text-tinta font-medium leading-relaxed bg-cielo-50/50 p-3.5 rounded-2xl border border-cielo-100/60">
+                        <span className="font-bold text-tinta">Motivo: </span>
+                        {e.motivo}
+                      </p>
+                    </div>
+
+                    {e.acuerdos_compromisos && (
+                      <div className="rounded-2xl border border-menta-200 bg-menta-50/60 p-3.5 text-xs text-menta-900 space-y-1">
+                        <p className="font-bold flex items-center gap-1.5">
+                          <CheckCircle2 className="size-3.5 text-menta-600" /> Acuerdos y Compromisos:
+                        </p>
+                        <p className="whitespace-pre-line leading-relaxed">{e.acuerdos_compromisos}</p>
+                      </div>
+                    )}
+
+                    {e.drive_file_url && (
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-tinta-suave">
+                          Acta oficial guardada en la carpeta digital del alumno en Google Drive
+                        </span>
+                        <a
+                          href={e.drive_file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="boton-sol px-3.5 py-1.5 text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+                        >
+                          <FileText className="size-3.5" /> Ver Acta en PDF <ExternalLink className="size-3" />
+                        </a>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-sol-200 bg-white/70 p-8 text-center space-y-3">
+              <CalendarDays className="mx-auto size-10 text-sol-400" />
+              <div className="space-y-1">
+                <p className="font-bold text-tinta">No hay entrevistas registradas</p>
+                <p className="text-xs text-tinta-suave max-w-md mx-auto">
+                  Si necesitas conversar sobre el desarrollo, aprendizaje, salud o adaptación de tu hijo(a), puedes solicitar una cita con la educadora de su nivel.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalEntrevistaAbierto(true)}
+                className="boton-sol px-5 py-2.5 text-xs font-bold shadow-xs inline-flex items-center gap-2"
+              >
+                <CalendarPlus className="size-4" /> Solicitar Entrevista con la Educadora
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Carpeta completa en Google Drive del párvulo (si está configurada) */}
       {ficha.parvulo?.drive_folder_url && (
         <div className="rounded-3xl border border-sol-200 bg-linear-to-r from-sol-100/70 via-white to-menta-100/70 p-6 shadow-suave">
@@ -543,6 +690,20 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
           onCerrar={() => setModalLicenciaAbierto(false)}
           onExito={() => {
             setModalLicenciaAbierto(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Modal para solicitar entrevista */}
+      {modalEntrevistaAbierto && ficha.parvulo && (
+        <ModalSolicitarEntrevista
+          rutParvulo={ficha.parvulo.rut}
+          nombreParvulo={`${ficha.parvulo.nombres} ${ficha.parvulo.apellidos}`}
+          nombreNivel={ficha.parvulo.nivel}
+          onCerrar={() => setModalEntrevistaAbierto(false)}
+          onExito={() => {
+            setModalEntrevistaAbierto(false);
             window.location.reload();
           }}
         />

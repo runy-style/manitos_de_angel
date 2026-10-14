@@ -74,6 +74,63 @@ export interface FichaApoderado {
     observacion_educadora: string | null;
     created_at?: string;
   }[];
+  entrevistas?: {
+    id: string;
+    fecha: string;
+    hora: string;
+    modalidad: ModalidadEntrevista;
+    motivo: string;
+    estado: EstadoEntrevista;
+    solicitado_por: SolicitanteEntrevista;
+    drive_file_url?: string | null;
+    puntos_tratados?: string | null;
+    acuerdos_compromisos?: string | null;
+    educadora?: string | null;
+  }[];
+}
+
+export type EstadoEntrevista = "pendiente" | "confirmada" | "realizada" | "cancelada";
+export type ModalidadEntrevista = "presencial" | "online" | "telefonica";
+export type SolicitanteEntrevista = "educadora" | "apoderado";
+
+export interface Entrevista {
+  id: string;
+  parvulo_id: string;
+  nivel_id: string;
+  educadora_id?: string | null;
+  fecha: string;
+  hora: string;
+  solicitado_por: SolicitanteEntrevista;
+  modalidad: ModalidadEntrevista;
+  motivo: string;
+  estado: EstadoEntrevista;
+  asistentes?: string | null;
+  puntos_tratados?: string | null;
+  acuerdos_compromisos?: string | null;
+  observaciones?: string | null;
+  drive_file_id?: string | null;
+  drive_file_url?: string | null;
+  nombre_archivo_pdf?: string | null;
+  acta_firmada_o_cerrada?: boolean;
+  visible_apoderado?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  parvulo?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    rut: string;
+    nombre_apoderado?: string | null;
+    telefono_apoderado?: string | null;
+  } | null;
+  nivel?: {
+    id: string;
+    nombre: string;
+  } | null;
+  educadora?: {
+    id: string;
+    nombre_completo: string;
+  } | null;
 }
 
 export interface LicenciaMedica {
