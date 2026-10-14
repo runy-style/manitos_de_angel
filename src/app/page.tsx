@@ -40,8 +40,12 @@ const CARACTERISTICAS = [
   },
 ];
 
-export default async function Inicio(props: PageProps<"/">) {
-  const searchParams = await props.searchParams;
+interface InicioProps {
+  searchParams?: Promise<{ acceso?: string }>;
+}
+
+export default async function Inicio(props: InicioProps) {
+  const searchParams = (await props.searchParams) ?? {};
   const accesoRequerido = searchParams.acceso === "requerido";
   const sesion = await obtenerSesion();
   const conSesion = sesion.tipo === "ok" || sesion.tipo === "sin-perfil";

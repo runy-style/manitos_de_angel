@@ -6,9 +6,15 @@ export async function proxy(request: NextRequest) {
   return actualizarSesion(request);
 }
 
+// Compatibilidad con adaptadores de Vercel
+export const middleware = proxy;
+export default proxy;
+
 export const config = {
   matcher: [
-    // Todo excepto archivos estáticos, optimización de imágenes y recursos públicos.
-    "/((?!_next/static|_next/image|favicon.ico|img/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Proteger únicamente el dashboard. La landing page (/) y recursos públicos
+    // se sirven de forma directa e instantánea sin intercepción de Edge.
+    "/dashboard",
+    "/dashboard/:path*",
   ],
 };

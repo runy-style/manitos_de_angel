@@ -4,9 +4,10 @@
  * amigable en vez de fallar mientras aún no se configuran las llaves reales.
  */
 export const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+  .trim()
   .replace(/\/rest\/v1\/?$/, "")
   .replace(/\/$/, "");
-export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+export const SUPABASE_ANON_KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim();
 
 export function supabaseConfigurado(): boolean {
   return (

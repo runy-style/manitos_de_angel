@@ -15,7 +15,11 @@ export const viewport: Viewport = {
   themeColor: "#8ccbf5",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es-CL" className="h-full">
       <body className="min-h-full flex flex-col">{children}</body>
