@@ -3,7 +3,9 @@
  * Permite que la app arranque con valores de ejemplo y muestre un aviso
  * amigable en vez de fallar mientras aún no se configuran las llaves reales.
  */
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+export const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+  .replace(/\/rest\/v1\/?$/, "")
+  .replace(/\/$/, "");
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 export function supabaseConfigurado(): boolean {
