@@ -87,6 +87,13 @@ export default async function PaginaAsistencia(props: PaginaAsistenciaProps) {
 
   const asistenciasGuardadas = asistenciasRaw ?? [];
 
+  // 6. Cargar licencias médicas pendientes para este nivel
+  const { count: licenciasPendientes } = await supabase
+    .from("licencias_medicas")
+    .select("*", { count: "exact", head: true })
+    .eq("nivel_id", nivelSeleccionadoId)
+    .eq("estado", "pendiente");
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Encabezado */}
@@ -101,6 +108,31 @@ export default async function PaginaAsistencia(props: PaginaAsistenciaProps) {
           </p>
         </div>
       </div>
+
+      {/* Aviso de licencias médicas pendientes */}
+      {Boolean(licenciasPendientes && licenciasPendientes > 0) && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-coral-200 bg-coral-50/90 p-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-coral-100 text-coral-600">
+              <CalendarCheck2 className="size-5" />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-coral-900">
+                Hay {licenciasPendientes} {licenciasPendientes === 1 ? "licencia médica pendiente" : "licencias médicas pendientes"} de revisión para este nivel.
+              </p>
+              <p className="text-[0.7rem] text-coral-700">
+                Al aprobarlas, los días de inasistencia médica se justifican automáticamente en este registro.
+              </p>
+            </div>
+          </div>
+          <a
+            href={`/dashboard/licencias?nivel=${nivelSeleccionadoId}`}
+            className="boton-coral self-start sm:self-auto px-3.5 py-1.5 text-xs font-bold whitespace-nowrap"
+          >
+            Revisar y Justificar
+          </a>
+        </div>
+      )}
 
       {/* Controles de Nivel y Fecha */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

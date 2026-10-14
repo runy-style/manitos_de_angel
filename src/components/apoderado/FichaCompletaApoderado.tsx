@@ -10,12 +10,15 @@ import {
   ExternalLink,
   FileText,
   Heart,
+  HeartPulse,
   Image as ImageIcon,
+  Plus,
   Printer,
   Sparkles,
   User,
 } from "lucide-react";
 import type { FichaApoderado } from "@/lib/types";
+import ModalSubirLicencia from "./ModalSubirLicencia";
 
 interface Props {
   ficha: FichaApoderado;
@@ -67,7 +70,8 @@ const ESTILOS_AREA: Record<string, { bg: string; texto: string; borde: string }>
 };
 
 export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props) {
-  const [pestana, setPestana] = useState<"avances" | "asistencia" | "archivos">("avances");
+  const [pestana, setPestana] = useState<"avances" | "asistencia" | "archivos" | "licencias">("avances");
+  const [modalLicenciaAbierto, setModalLicenciaAbierto] = useState(false);
 
   const porcentaje = Number(ficha.estadisticas?.porcentaje_asistencia ?? 0);
   const radio = 46;
@@ -81,6 +85,7 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
 
   const totalAvances = ficha.bitacora?.length ?? 0;
   const totalArchivos = ficha.archivos?.length ?? 0;
+  const totalLicencias = ficha.licencias?.length ?? 0;
 
   function imprimirFicha() {
     window.print();
@@ -224,6 +229,19 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
             Fotos y Archivos ({totalArchivos})
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => setPestana("licencias")}
+          className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition ${
+            pestana === "licencias"
+              ? "bg-coral-500 text-white shadow-suave"
+              : "text-tinta hover:bg-white/80"
+          }`}
+        >
+          <HeartPulse className="size-4" />
+          Licencias Médicas {totalLicencias > 0 && `(${totalLicencias})`}
+        </button>
       </nav>
 
       {/* Sección 1: Bitácora de Avances Pedagógicos */}
@@ -386,6 +404,111 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
         </section>
       )}
 
+      {/* Sección 4: Licencias Médicas del Párvulo */}
+      {(pestana === "licencias" || typeof window === "undefined") && (
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-bold text-tinta flex items-center gap-2">
+                <HeartPulse className="size-5 text-coral-500" />
+                Licencias Médicas y Reposo
+              </h2>
+              <p className="text-xs text-tinta-suave mt-0.5">
+                Los documentos se guardan directamente en la subcarpeta &quot;Licencias&quot; de Google Drive y se notifican a la educadora.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setModalLicenciaAbierto(true)}
+              className="boton-coral self-start sm:self-auto px-4 py-2 text-xs font-bold shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="size-4" /> Subir Nueva Licencia
+            </button>
+          </div>
+
+          {totalLicencias > 0 ? (
+            <div className="space-y-3">
+              {ficha.licencias!.map((lic) => {
+                const badgeColor =
+                  lic.estado === "justificada"
+                    ? "bg-menta-100 text-menta-800 border-menta-300"
+                    : lic.estado === "rechazada"
+                    ? "bg-coral-100 text-coral-800 border-coral-300"
+                    : "bg-sol-100 text-sol-800 border-sol-300";
+
+                const badgeTexto =
+                  lic.estado === "justificada"
+                    ? "Aprobada · Justificada en Asistencia"
+                    : lic.estado === "rechazada"
+                    ? "Rechazada / Observada"
+                    : "Pendiente de revisión por Educadora";
+
+                return (
+                  <article
+                    key={lic.id}
+                    className="rounded-3xl border border-white/90 bg-white/95 p-5 shadow-suave space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cielo-50 pb-3">
+                      <span className={`insignia border text-xs font-bold ${badgeColor}`}>
+                        {badgeTexto}
+                      </span>
+                      <span className="text-xs font-semibold text-tinta-suave flex items-center gap-1">
+                        <Calendar className="size-3.5 text-cielo-500" />
+                        Período: {lic.fecha_inicio} al {lic.fecha_termino} ({lic.dias_reposo} {lic.dias_reposo === 1 ? "día" : "días"})
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-tinta">
+                        {lic.diagnostico_motivo || "Reposo prescrito por médico"}
+                      </p>
+                      <p className="text-xs text-tinta-suave">
+                        Archivo: <span className="font-semibold text-tinta">{lic.nombre_archivo}</span>
+                      </p>
+                    </div>
+
+                    {lic.observacion_educadora && (
+                      <div className="rounded-2xl bg-cielo-50/70 p-3 text-xs text-tinta">
+                        <span className="font-bold text-cielo-700">Nota de la Educadora: </span>
+                        {lic.observacion_educadora}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      <a
+                        href={lic.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-cielo-600 hover:text-cielo-700"
+                      >
+                        Ver documento en Google Drive <ExternalLink className="size-3" />
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-coral-200 bg-white/70 p-8 text-center space-y-3">
+              <HeartPulse className="mx-auto size-10 text-coral-400" />
+              <div className="space-y-1">
+                <p className="font-bold text-tinta">No hay licencias médicas registradas</p>
+                <p className="text-xs text-tinta-suave max-w-md mx-auto">
+                  Si tu hijo o hija estuvo con reposo médico, puedes subir el certificado o licencia aquí para que su inasistencia quede justificada en el registro oficial.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalLicenciaAbierto(true)}
+                className="boton-coral px-5 py-2.5 text-xs font-bold shadow-xs inline-flex items-center gap-2"
+              >
+                <Plus className="size-4" /> Subir Certificado o Licencia
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Carpeta completa en Google Drive del párvulo (si está configurada) */}
       {ficha.parvulo?.drive_folder_url && (
         <div className="rounded-3xl border border-sol-200 bg-linear-to-r from-sol-100/70 via-white to-menta-100/70 p-6 shadow-suave">
@@ -409,6 +532,20 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
             </a>
           </div>
         </div>
+      )}
+
+      {/* Modal para subir licencia */}
+      {modalLicenciaAbierto && ficha.parvulo && (
+        <ModalSubirLicencia
+          rutParvulo={ficha.parvulo.rut}
+          nombreParvulo={`${ficha.parvulo.nombres} ${ficha.parvulo.apellidos}`}
+          nombreNivel={ficha.parvulo.nivel}
+          onCerrar={() => setModalLicenciaAbierto(false)}
+          onExito={() => {
+            setModalLicenciaAbierto(false);
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

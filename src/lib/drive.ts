@@ -73,6 +73,7 @@ export async function subirArchivoParvuloDrive(params: {
   nombreArchivo: string;
   mimeType: string;
   base64Data: string;
+  subCarpeta?: string;
 }): Promise<RespuestaDriveArchivo> {
   const webhookUrl = process.env.GOOGLE_SCRIPT_WEBHOOK_URL?.trim();
 
@@ -95,6 +96,7 @@ export async function subirArchivoParvuloDrive(params: {
         nombreArchivo: params.nombreArchivo,
         mimeType: params.mimeType,
         base64Data: params.base64Data,
+        subCarpeta: params.subCarpeta,
       }),
     });
 

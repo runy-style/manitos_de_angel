@@ -25,6 +25,8 @@ export interface PerfilConNivel extends Perfil {
 
 export type EstadoAsistencia = "presente" | "ausente" | "justificado";
 
+export type EstadoLicencia = "pendiente" | "justificada" | "rechazada";
+
 export interface FichaApoderado {
   encontrado: boolean;
   mensaje?: string;
@@ -59,6 +61,48 @@ export interface FichaApoderado {
     url: string;
     fecha: string;
   }[];
+  licencias?: {
+    id: string;
+    fecha_emision: string;
+    fecha_inicio: string;
+    fecha_termino: string;
+    dias_reposo: number;
+    diagnostico_motivo: string | null;
+    url: string;
+    nombre_archivo: string;
+    estado: EstadoLicencia;
+    observacion_educadora: string | null;
+    created_at?: string;
+  }[];
+}
+
+export interface LicenciaMedica {
+  id: string;
+  parvulo_id: string;
+  nivel_id: string;
+  fecha_emision: string;
+  fecha_inicio: string;
+  fecha_termino: string;
+  dias_reposo: number;
+  diagnostico_motivo: string | null;
+  drive_file_id: string | null;
+  drive_file_url: string;
+  nombre_archivo: string;
+  estado: EstadoLicencia;
+  observacion_educadora: string | null;
+  revisado_por?: string | null;
+  revisado_el?: string | null;
+  created_at?: string;
+  parvulo?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    rut: string;
+  } | null;
+  nivel?: {
+    id: string;
+    nombre: string;
+  } | null;
 }
 
 export const ETIQUETA_ROL: Record<Rol, string> = {

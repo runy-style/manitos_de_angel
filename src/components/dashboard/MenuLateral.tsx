@@ -8,6 +8,7 @@ import {
   BarChart3,
   BookHeart,
   CalendarCheck2,
+  HeartPulse,
   Home,
   LogOut,
   Menu,
@@ -22,11 +23,11 @@ import InsigniaRol from "./InsigniaRol";
 
 type Item = { href: string; etiqueta: string; icono: LucideIcon; etapa?: number };
 
-// Los módulos con "etapa" se habilitarán en las siguientes etapas del proyecto.
 const ITEMS: Item[] = [
   { href: "/dashboard", etiqueta: "Inicio", icono: Home },
   { href: "/dashboard/parvulos", etiqueta: "Párvulos", icono: Users },
   { href: "/dashboard/asistencia", etiqueta: "Asistencia", icono: CalendarCheck2 },
+  { href: "/dashboard/licencias", etiqueta: "Licencias Médicas", icono: HeartPulse },
   { href: "/dashboard/estadisticas", etiqueta: "Estadísticas", icono: BarChart3 },
   { href: "/dashboard/bitacora", etiqueta: "Bitácora", icono: NotebookPen },
   { href: "/dashboard/planificaciones", etiqueta: "Planificaciones", icono: BookHeart },

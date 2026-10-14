@@ -240,7 +240,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const rootFolder = getOrCreateFolder_(DriveApp.getRootFolder(), ROOT_FOLDER_NAME);
 
-    // Caso 1: Crear carpeta individual del párvulo y/o subir archivo (Word o Foto)
+    // Caso 1: Crear carpeta individual del párvulo y/o subir archivo (Word, Foto o Licencia Médica)
     if (data.accion === "subir_archivo_parvulo") {
       const alumnosRoot = getOrCreateFolder_(rootFolder, "01_CARPETAS_PARVULOS");
       const nivelFolder = getOrCreateFolder_(alumnosRoot, data.nombreNivel || "General");
@@ -256,16 +256,23 @@ function doPost(e) {
         });
       }
 
-      // Decodificar archivo en Base64 y guardarlo en la carpeta del alumno
+      // Si se especifica subcarpeta (ej: "Licencias"), guardarlo dentro de ella
+      const destinoFolder = data.subCarpeta
+        ? getOrCreateFolder_(alumnoFolder, data.subCarpeta)
+        : alumnoFolder;
+
+      // Decodificar archivo en Base64 y guardarlo en la carpeta de destino
       const bytes = Utilities.base64Decode(data.base64Data);
       const blob = Utilities.newBlob(bytes, data.mimeType, data.nombreArchivo);
-      const file = alumnoFolder.createFile(blob);
+      const file = destinoFolder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
       return jsonResponse_({
         ok: true,
         folderId: alumnoFolder.getId(),
         folderUrl: alumnoFolder.getUrl(),
+        subFolderId: destinoFolder.getId(),
+        subFolderUrl: destinoFolder.getUrl(),
         fileId: file.getId(),
         fileUrl: file.getUrl()
       });
