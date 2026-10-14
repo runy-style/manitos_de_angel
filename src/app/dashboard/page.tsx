@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookHeart,
   CalendarCheck2,
   Eye,
   NotebookPen,
@@ -160,7 +161,7 @@ export default async function PanelInicio() {
                       <Users className="size-4 text-cielo-500" />
                       {conteo.get(nivel.id) ?? 0} párvulos activos
                     </p>
-                    <div className="mt-auto grid grid-cols-3 gap-2">
+                    <div className="mt-auto grid grid-cols-2 gap-2">
                       <a
                         href={`/dashboard/parvulos?nivel=${nivel.id}`}
                         className="boton-suave flex-col gap-1 px-2 py-2 text-xs text-center"
@@ -176,11 +177,18 @@ export default async function PanelInicio() {
                         <CalendarCheck2 className="size-4 text-menta-500" /> Asistencia
                       </a>
                       <a
-                        href={`/dashboard/estadisticas?nivel=${nivel.id}`}
+                        href={`/dashboard/bitacora?nivelId=${nivel.id}`}
                         className="boton-suave flex-col gap-1 px-2 py-2 text-xs text-center"
-                        aria-label={`Estadísticas de ${nivel.nombre}`}
+                        aria-label={`Bitácora de ${nivel.nombre}`}
                       >
-                        <BarChart3 className="size-4 text-sol-500" /> Estadísticas
+                        <NotebookPen className="size-4 text-sol-500" /> Bitácora
+                      </a>
+                      <a
+                        href={`/dashboard/planificaciones?nivelId=${nivel.id}`}
+                        className="boton-suave flex-col gap-1 px-2 py-2 text-xs text-center"
+                        aria-label={`Planificaciones de ${nivel.nombre}`}
+                      >
+                        <BookHeart className="size-4 text-coral-500" /> Planificaciones
                       </a>
                     </div>
                   </div>

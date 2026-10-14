@@ -135,3 +135,64 @@ export interface EntradaBitacora {
     rut: string;
   } | null;
 }
+export const MESES_DEL_ANIO = [
+  { numero: 1, nombre: "Enero" },
+  { numero: 2, nombre: "Febrero" },
+  { numero: 3, nombre: "Marzo" },
+  { numero: 4, nombre: "Abril" },
+  { numero: 5, nombre: "Mayo" },
+  { numero: 6, nombre: "Junio" },
+  { numero: 7, nombre: "Julio" },
+  { numero: 8, nombre: "Agosto" },
+  { numero: 9, nombre: "Septiembre" },
+  { numero: 10, nombre: "Octubre" },
+  { numero: 11, nombre: "Noviembre" },
+  { numero: 12, nombre: "Diciembre" },
+] as const;
+
+export type TipoDocumentoNivel = "planificacion_mensual" | "pauta_evaluacion";
+
+export interface DocumentoNivel {
+  id: string;
+  nivel_id: string;
+  educadora_id: string | null;
+  tipo_documento: TipoDocumentoNivel;
+  mes: number;
+  anio: number;
+  titulo: string;
+  descripcion?: string | null;
+  drive_file_id?: string | null;
+  drive_file_url: string;
+  nombre_archivo: string;
+  created_at?: string;
+  educadora?: {
+    id: string;
+    nombre_completo: string;
+  } | null;
+  nivel?: {
+    id: string;
+    nombre: string;
+  } | null;
+}
+
+export type CategoriaArchivoParvulo =
+  | "fotografia"
+  | "documento_word"
+  | "pauta_individual"
+  | "otro";
+
+export interface ArchivoParvulo {
+  id: string;
+  parvulo_id: string;
+  educadora_id: string | null;
+  categoria: CategoriaArchivoParvulo;
+  titulo: string;
+  drive_file_id?: string | null;
+  drive_file_url: string;
+  visible_apoderado: boolean;
+  created_at?: string;
+  educadora?: {
+    id: string;
+    nombre_completo: string;
+  } | null;
+}

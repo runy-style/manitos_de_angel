@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
 import { puedeEditarNivel } from "@/lib/permisos";
 import { normalizarRut, validarRut } from "@/lib/rut";
+import { driveConfigurado, asegurarCarpetaParvuloDrive } from "@/lib/drive";
 import type { Parvulo } from "@/lib/types";
 
 export type RespuestaAccion = {
@@ -105,6 +106,36 @@ export async function guardarParvulo(
         return { ok: false, error: "Ya existe un párvulo registrado con este RUT." };
       }
       return { ok: false, error: "Error al registrar el párvulo: " + error.message };
+    }
+
+    if (driveConfigurado() && !driveFolderUrl && data) {
+      try {
+        const { data: nivel } = await supabase
+          .from("niveles")
+          .select("nombre")
+          .eq("id", nivelId)
+          .single();
+
+        const resDrive = await asegurarCarpetaParvuloDrive({
+          rutParvulo: rutNormalizado,
+          nombreParvulo: `${nombres} ${apellidos}`,
+          nombreNivel: nivel?.nombre ?? "General",
+        });
+
+        if (resDrive.ok && resDrive.folderUrl) {
+          await supabase
+            .from("parvulos")
+            .update({
+              drive_folder_id: resDrive.folderId,
+              drive_folder_url: resDrive.folderUrl,
+            })
+            .eq("id", data.id);
+          data.drive_folder_id = resDrive.folderId ?? null;
+          data.drive_folder_url = resDrive.folderUrl;
+        }
+      } catch {
+        // Si Drive está temporalmente inaccesible no bloquea la inscripción
+      }
     }
 
     revalidarRutas();

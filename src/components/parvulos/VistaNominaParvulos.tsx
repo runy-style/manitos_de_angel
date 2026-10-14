@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Folder,
+  FolderOpen,
   FolderX,
   NotebookPen,
   Pencil,
@@ -18,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import ModalParvulo from "./ModalParvulo";
+import ModalArchivosParvulo from "./ModalArchivosParvulo";
 import { alternarEstadoParvulo } from "@/app/actions/parvulos";
 import { formatearRut } from "@/lib/rut";
 import { puedeEditarNivel } from "@/lib/permisos";
@@ -40,6 +42,7 @@ export default function VistaNominaParvulos({
   const [filtroEstado, setFiltroEstado] = useState<"activos" | "inactivos" | "todos">("activos");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [parvuloEditar, setParvuloEditar] = useState<Parvulo | null>(null);
+  const [parvuloArchivos, setParvuloArchivos] = useState<Parvulo | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const puedeEditar = puedeEditarNivel(perfil, nivelSeleccionado.id);
@@ -281,29 +284,38 @@ export default function VistaNominaParvulos({
                       {/* Carpeta Drive */}
                       <td className="px-6 py-4 text-center">
                         {p.drive_folder_url ? (
-                          <a
-                            href={p.drive_folder_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-sol-50 px-3 py-1 text-xs font-bold text-sol-700 hover:bg-sol-100 transition ring-1 ring-sol-200"
-                            title="Abrir carpeta del alumno en Google Drive"
+                          <button
+                            type="button"
+                            onClick={() => setParvuloArchivos(p)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-sol-50 px-3 py-1 text-xs font-bold text-sol-700 hover:bg-sol-100 transition ring-1 ring-sol-200 cursor-pointer"
+                            title="Ver archivos y carpeta en Google Drive"
                           >
                             <Folder className="size-3.5 text-sol-500" />
                             Drive <ExternalLink className="size-2.5 opacity-60" />
-                          </a>
+                          </button>
                         ) : (
-                          <span
-                            className="inline-flex items-center gap-1 rounded-xl bg-gray-50 px-2.5 py-1 text-[0.7rem] text-gray-400"
-                            title="La carpeta se creará en la Etapa 4"
+                          <button
+                            type="button"
+                            onClick={() => setParvuloArchivos(p)}
+                            className="inline-flex items-center gap-1 rounded-xl bg-cielo-50 px-2.5 py-1 text-[0.7rem] font-bold text-cielo-700 hover:bg-cielo-100 transition cursor-pointer"
+                            title="Subir archivos o generar carpeta en Google Drive"
                           >
-                            <FolderX className="size-3" /> Sin carpeta
-                          </span>
+                            <FolderOpen className="size-3 text-cielo-500" /> Gestionar
+                          </button>
                         )}
                       </td>
 
                       {/* Acciones */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setParvuloArchivos(p)}
+                            title="Archivos y fotos en Google Drive"
+                            className="grid size-8 place-items-center rounded-xl text-tinta-suave hover:bg-sol-50 hover:text-sol-700 transition"
+                          >
+                            <FolderOpen className="size-4 text-sol-600" />
+                          </button>
                           <Link
                             href={`/dashboard/bitacora?nivelId=${p.nivel_id}&parvuloId=${p.id}`}
                             title="Ver bitácora de avances del párvulo"
@@ -362,6 +374,17 @@ export default function VistaNominaParvulos({
         nivelSeleccionadoId={nivelSeleccionado.id}
         parvuloEditar={parvuloEditar}
       />
+
+      {/* Modal para archivos y fotos en Google Drive */}
+      {parvuloArchivos && (
+        <ModalArchivosParvulo
+          abierto={!!parvuloArchivos}
+          onCerrar={() => setParvuloArchivos(null)}
+          parvulo={parvuloArchivos}
+          puedeEditar={puedeEditar}
+          nombreNivel={nivelSeleccionado.nombre}
+        />
+      )}
     </div>
   );
 }
