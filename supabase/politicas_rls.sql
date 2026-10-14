@@ -40,7 +40,7 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.perfiles
-    where id = auth.uid() and rol = 'educadora' and nivel_id = p_nivel
+    where id = auth.uid() and (rol = 'admin' or (rol = 'educadora' and nivel_id = p_nivel))
   );
 $$;
 
@@ -59,6 +59,11 @@ create policy "personal lee niveles" on public.niveles
 
 create policy "personal lee perfiles" on public.perfiles
   for select to authenticated using (id = auth.uid() or public.mi_rol() is not null);
+
+create policy "admin gestiona perfiles" on public.perfiles
+  for all to authenticated
+  using (public.mi_rol() = 'admin')
+  with check (public.mi_rol() = 'admin');
 
 create policy "personal lee parvulos" on public.parvulos
   for select to authenticated using (public.mi_rol() is not null);
