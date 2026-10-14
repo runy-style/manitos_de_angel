@@ -4,11 +4,16 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import Link from "next/link";
 import {
   AlertCircle,
+  ArrowLeft,
   CalendarCheck,
   CheckCircle2,
   ExternalLink,
+  Eye,
+  EyeOff,
   HeartHandshake,
+  KeyRound,
   Loader2,
+  Lock,
   Search,
   Sparkles,
   X,
@@ -88,11 +93,16 @@ function ModalApoderados({
   onCerrar: () => void;
 }) {
   const [rut, setRut] = useState("");
+  const [pin, setPin] = useState("");
+  const [requierePin, setRequierePin] = useState(false);
+  const [nombreParvulo, setNombreParvulo] = useState<string | null>(null);
+  const [mostrarPin, setMostrarPin] = useState(false);
   const [tocado, setTocado] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ficha, setFicha] = useState<FichaApoderado | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pinInputRef = useRef<HTMLInputElement>(null);
 
   const rutCompleto = limpiarRut(rut).length >= 8;
   const rutValido = validarRut(rut);
@@ -117,6 +127,11 @@ function ModalApoderados({
     setError(null);
     if (!rutValido) return;
 
+    if (requierePin && pin.length !== 4) {
+      setError("El PIN debe tener exactamente 4 dígitos numéricos.");
+      return;
+    }
+
     if (!supabaseListo) {
       setError("El portal aún no está conectado a la base de datos del jardín.");
       return;
@@ -127,14 +142,22 @@ function ModalApoderados({
       const supabase = createClient();
       const { data, error: rpcError } = await supabase.rpc("consultar_ficha_apoderado", {
         p_rut: normalizarRut(rut),
+        p_pin: pin.trim() || null,
       });
       if (rpcError) throw rpcError;
       const resultado = data as FichaApoderado;
-      if (!resultado?.encontrado) {
+      if (resultado?.requiere_pin && !resultado?.encontrado) {
+        setRequierePin(true);
+        setNombreParvulo(resultado.parvulo_nombre || null);
+        setError(resultado.pin_incorrecto ? (resultado.mensaje ?? "PIN incorrecto.") : null);
+        setFicha(null);
+        setTimeout(() => pinInputRef.current?.focus(), 100);
+      } else if (!resultado?.encontrado) {
         setError(resultado?.mensaje ?? "No se encontró un párvulo activo con el RUT indicado.");
         setFicha(null);
       } else {
         setFicha(resultado);
+        setError(null);
       }
     } catch {
       setError("No pudimos realizar la consulta. Intenta nuevamente en unos minutos.");
@@ -175,84 +198,191 @@ function ModalApoderados({
             <HeartHandshake className="size-3.5" /> Portal de Apoderados
           </p>
           <h2 id="titulo-portal-apoderados" className="text-2xl font-semibold text-tinta">
-            ¿Cómo va tu pequeño/a?
+            {requierePin ? "Ingreso de Seguridad" : "¿Cómo va tu pequeño/a?"}
           </h2>
           <p className="mt-1 text-sm text-tinta-suave">
-            Ingresa el RUT del párvulo para ver su asistencia y avances.
+            {requierePin
+              ? "Esta ficha tiene PIN asignado para proteger la privacidad del alumno."
+              : "Ingresa el RUT del párvulo para ver su asistencia y avances."}
           </p>
         </div>
 
         <div className="space-y-5 p-6">
-          <form onSubmit={consultar} className="space-y-3" noValidate>
-            <label htmlFor="rut-parvulo" className="etiqueta">
-              RUT del párvulo
-            </label>
-            <div className="relative">
-              <input
-                ref={inputRef}
-                id="rut-parvulo"
-                inputMode="text"
-                autoComplete="off"
-                placeholder="12.345.678-9"
-                value={rut}
-                onChange={(e) => {
-                  setRut(formatearRut(e.target.value));
-                  setError(null);
-                }}
-                onBlur={() => setTocado(true)}
-                aria-invalid={mostrarErrorRut}
-                aria-describedby="rut-ayuda"
-                className={`campo pr-12 text-lg font-bold tracking-wider ${mostrarErrorRut ? "campo-error" : ""}`}
-              />
-              {rutValido && (
-                <CheckCircle2 className="absolute right-4 top-1/2 size-6 -translate-y-1/2 text-menta-500" />
-              )}
-            </div>
-            <p
-              id="rut-ayuda"
-              className={`text-xs font-semibold ${mostrarErrorRut ? "text-coral-500" : "text-tinta-suave"}`}
-            >
-              {mostrarErrorRut
-                ? "El RUT ingresado no es válido. Revisa los números y el dígito verificador."
-                : "Se formatea automáticamente. Ej: 24.123.456-7"}
-            </p>
+          <form onSubmit={consultar} className="space-y-4" noValidate>
+            {requierePin ? (
+              /* Paso 2: Ingreso de PIN de Seguridad */
+              <div className="space-y-4 animate-aparecer">
+                <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-4 flex items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-500 text-white shadow-xs">
+                    <Lock className="size-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                        Ficha Protegida
+                      </span>
+                      <span className="rounded-full bg-amber-200/80 px-2 py-0.2 text-[10px] font-bold text-amber-900">
+                        PIN Activo
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-tinta truncate">
+                      {nombreParvulo || `Alumno con RUT ${formatearRut(rut)}`}
+                    </p>
+                  </div>
+                </div>
 
-            <button
-              id="consultar-rut"
-              type="submit"
-              disabled={cargando || !rutValido}
-              className="boton-menta w-full py-3.5 text-lg"
-            >
-              {cargando ? (
-                <>
-                  <Loader2 className="size-5 animate-spin" /> Consultando…
-                </>
-              ) : (
-                <>
-                  <Search className="size-5" /> Consultar ficha
-                </>
-              )}
-            </button>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="pin-modal-home" className="etiqueta text-sm font-bold">
+                      Ingresa tu PIN de 4 dígitos
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPin(!mostrarPin)}
+                      className="text-xs font-semibold text-cielo-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      {mostrarPin ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      {mostrarPin ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                  <input
+                    ref={pinInputRef}
+                    id="pin-modal-home"
+                    type={mostrarPin ? "text" : "password"}
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+                      setPin(val);
+                      setError(null);
+                    }}
+                    placeholder="••••"
+                    className="campo text-center text-2xl font-mono tracking-[0.5em] font-bold py-3"
+                  />
+                  <p className="mt-1 text-xs text-tinta-suave text-center">
+                    Ingresa los 4 números establecidos para acceder a los antecedentes.
+                  </p>
+                </div>
+
+                {error && (
+                  <p
+                    role="alert"
+                    className="flex items-start gap-2 rounded-2xl bg-coral-50 p-3.5 text-xs font-semibold text-coral-700 animate-sacudir"
+                  >
+                    <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </p>
+                )}
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequierePin(false);
+                      setPin("");
+                      setError(null);
+                    }}
+                    className="boton-suave px-3 py-3 text-xs font-bold flex-1"
+                  >
+                    <ArrowLeft className="size-4" /> Cambiar RUT
+                  </button>
+                  <button
+                    id="consultar-pin-home"
+                    type="submit"
+                    disabled={cargando || pin.length !== 4}
+                    className="boton-sol px-4 py-3 text-sm font-bold flex-1 shadow-md inline-flex items-center justify-center gap-2"
+                  >
+                    {cargando ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" /> Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="size-4" /> Entrar a Ficha
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-tinta-suave text-center">
+                  ¿Olvidaste tu PIN? Solicita a la educadora de tu nivel restablecerlo.
+                </p>
+              </div>
+            ) : (
+              /* Paso 1: Ingreso de RUT normal */
+              <div className="space-y-3">
+                <label htmlFor="rut-parvulo" className="etiqueta">
+                  RUT del párvulo
+                </label>
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    id="rut-parvulo"
+                    inputMode="text"
+                    autoComplete="off"
+                    placeholder="12.345.678-9"
+                    value={rut}
+                    onChange={(e) => {
+                      setRut(formatearRut(e.target.value));
+                      setError(null);
+                    }}
+                    onBlur={() => setTocado(true)}
+                    aria-invalid={mostrarErrorRut}
+                    aria-describedby="rut-ayuda"
+                    className={`campo pr-12 text-lg font-bold tracking-wider ${mostrarErrorRut ? "campo-error" : ""}`}
+                  />
+                  {rutValido && (
+                    <CheckCircle2 className="absolute right-4 top-1/2 size-6 -translate-y-1/2 text-menta-500" />
+                  )}
+                </div>
+                <p
+                  id="rut-ayuda"
+                  className={`text-xs font-semibold ${mostrarErrorRut ? "text-coral-500" : "text-tinta-suave"}`}
+                >
+                  {mostrarErrorRut
+                    ? "El RUT ingresado no es válido. Revisa los números y el dígito verificador."
+                    : "Se formatea automáticamente. Ej: 24.123.456-7"}
+                </p>
+
+                {error && (
+                  <p
+                    role="alert"
+                    className="flex items-start gap-2 rounded-2xl bg-coral-50 px-4 py-3 text-sm font-semibold text-coral-600 animate-sacudir"
+                  >
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                    <span>{error}</span>
+                  </p>
+                )}
+
+                <button
+                  id="consultar-rut"
+                  type="submit"
+                  disabled={cargando || !rutValido}
+                  className="boton-menta w-full py-3.5 text-lg font-bold"
+                >
+                  {cargando ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" /> Consultando…
+                    </>
+                  ) : (
+                    <>
+                      <Search className="size-5" /> Consultar ficha
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </form>
 
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-2 rounded-2xl bg-coral-50 px-4 py-3 text-sm font-semibold text-coral-600 animate-sacudir"
-            >
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              {error}
-            </p>
-          )}
-
-          {ficha?.parvulo && <ResumenFicha ficha={ficha} />}
+          {ficha?.parvulo && <ResumenFicha ficha={ficha} pin={pin} />}
         </div>
       </div>
     </div>
   );
 }
 
-function ResumenFicha({ ficha }: { ficha: FichaApoderado }) {
+function ResumenFicha({ ficha, pin }: { ficha: FichaApoderado; pin?: string }) {
   const porcentaje = Number(ficha.estadisticas?.porcentaje_asistencia ?? 0);
   const radio = 42;
   const circunferencia = 2 * Math.PI * radio;
@@ -335,7 +465,7 @@ function ResumenFicha({ ficha }: { ficha: FichaApoderado }) {
       {/* Botón para ver ficha completa e imprimir */}
       <div className="pt-2">
         <Link
-          href={`/apoderado?rut=${encodeURIComponent(ficha.parvulo!.rut)}`}
+          href={`/apoderado?rut=${encodeURIComponent(ficha.parvulo!.rut)}${pin ? `&pin=${encodeURIComponent(pin)}` : ""}`}
           className="boton-sol flex w-full items-center justify-center gap-2 py-3 text-sm font-bold shadow-xs"
         >
           <span>Ver Ficha Completa e Imprimir</span>
