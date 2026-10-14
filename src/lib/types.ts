@@ -87,6 +87,50 @@ export interface FichaApoderado {
     acuerdos_compromisos?: string | null;
     educadora?: string | null;
   }[];
+  comunicados?: {
+    id: string;
+    titulo: string;
+    contenido: string;
+    categoria: CategoriaComunicado;
+    fijado: boolean;
+    fecha_evento?: string | null;
+    adjunto_url?: string | null;
+    created_at: string;
+    es_general: boolean;
+    nivel_nombre?: string | null;
+    autor_nombre?: string | null;
+  }[];
+}
+
+export type CategoriaComunicado =
+  | "informativo"
+  | "actividad"
+  | "urgente"
+  | "materiales"
+  | "celebracion";
+
+export interface Comunicado {
+  id: string;
+  nivel_id?: string | null;
+  autor_id?: string | null;
+  titulo: string;
+  contenido: string;
+  categoria: CategoriaComunicado;
+  fijado: boolean;
+  fecha_evento?: string | null;
+  adjunto_url?: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at?: string;
+  nivel?: {
+    id: string;
+    nombre: string;
+  } | null;
+  autor?: {
+    id: string;
+    nombre_completo: string;
+    rol?: string;
+  } | null;
 }
 
 export type EstadoEntrevista = "pendiente" | "confirmada" | "realizada" | "cancelada";

@@ -14,6 +14,9 @@ import {
   Heart,
   HeartPulse,
   Image as ImageIcon,
+  Megaphone,
+  MessageCircle,
+  Pin,
   Plus,
   Printer,
   Sparkles,
@@ -72,8 +75,44 @@ const ESTILOS_AREA: Record<string, { bg: string; texto: string; borde: string }>
   },
 };
 
+const ESTILOS_COMUNICADO: Record<
+  string,
+  { label: string; badge: string; iconEmoji: string }
+> = {
+  informativo: {
+    label: "Informativo General",
+    badge: "bg-cielo-100 text-cielo-800 border-cielo-200",
+    iconEmoji: "📢",
+  },
+  actividad: {
+    label: "Actividad / Taller",
+    badge: "bg-menta-100 text-menta-800 border-menta-200",
+    iconEmoji: "🎨",
+  },
+  urgente: {
+    label: "Importante / Urgente",
+    badge: "bg-coral-100 text-coral-800 border-coral-200",
+    iconEmoji: "⚠️",
+  },
+  materiales: {
+    label: "Materiales y Útiles",
+    badge: "bg-sol-100 text-sol-800 border-sol-200",
+    iconEmoji: "🎒",
+  },
+  celebracion: {
+    label: "Celebración / Evento",
+    badge: "bg-lavanda-100 text-lavanda-800 border-lavanda-200",
+    iconEmoji: "🎉",
+  },
+};
+
 export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props) {
-  const [pestana, setPestana] = useState<"avances" | "asistencia" | "archivos" | "licencias" | "entrevistas">("avances");
+  const totalComunicados = ficha.comunicados?.length ?? 0;
+  const comunicadoFijado = ficha.comunicados?.find((c) => c.fijado);
+
+  const [pestana, setPestana] = useState<
+    "comunicados" | "avances" | "asistencia" | "archivos" | "licencias" | "entrevistas"
+  >(totalComunicados > 0 ? "comunicados" : "avances");
   const [modalLicenciaAbierto, setModalLicenciaAbierto] = useState(false);
   const [modalEntrevistaAbierto, setModalEntrevistaAbierto] = useState(false);
 
@@ -192,8 +231,55 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
         </div>
       </header>
 
+      {/* Banner de comunicado fijado (si está en otra pestaña) */}
+      {comunicadoFijado && pestana !== "comunicados" && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setPestana("comunicados")}
+          className="print:hidden rounded-3xl border border-amber-300 bg-linear-to-r from-amber-100/90 via-sol-50/90 to-amber-100/90 p-4 shadow-suave cursor-pointer transition hover:scale-[1.01]"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-amber-500 text-white shadow-xs">
+                <Megaphone className="size-4.5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                    Aviso Destacado del Jardín
+                  </span>
+                  <span className="rounded-full bg-sol-400/30 px-2 py-0.2 text-[10px] font-bold text-sol-900">
+                    Fijado
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-tinta line-clamp-1">
+                  {comunicadoFijado.titulo}
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-amber-900 underline">
+              Ver en Cuaderno de Comunicados →
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Pestañas de navegación interactiva (ocultas en impresión) */}
-      <nav className="print:hidden flex gap-2 border-b border-cielo-100 pb-2">
+      <nav className="print:hidden flex flex-wrap gap-2 border-b border-cielo-100 pb-2">
+        <button
+          type="button"
+          onClick={() => setPestana("comunicados")}
+          className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition ${
+            pestana === "comunicados"
+              ? "bg-sol-500 text-white shadow-suave"
+              : "text-tinta hover:bg-white/80"
+          }`}
+        >
+          <Megaphone className="size-4" />
+          Cuaderno de Comunicados {totalComunicados > 0 && `(${totalComunicados})`}
+        </button>
+
         <button
           type="button"
           onClick={() => setPestana("avances")}
@@ -262,8 +348,142 @@ export default function FichaCompletaApoderado({ ficha, onConsultarOtro }: Props
         </button>
       </nav>
 
+      {/* Sección 0: Cuaderno de Comunicados y Circulares */}
+      {pestana === "comunicados" && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-display text-xl font-bold text-tinta flex items-center gap-2">
+                <Megaphone className="size-5 text-sol-500" />
+                Cuaderno de Comunicaciones Oficial
+              </h2>
+              <p className="text-xs text-tinta-suave">
+                Avisos importantes, recordatorios de materiales, circulares y actividades del jardín.
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-tinta-suave">
+              {totalComunicados} comunicados en total
+            </span>
+          </div>
+
+          {totalComunicados > 0 ? (
+            <div className="space-y-4">
+              {ficha.comunicados!.map((c) => {
+                const estilo = ESTILOS_COMUNICADO[c.categoria] ?? ESTILOS_COMUNICADO.informativo;
+                const fechaPublicacion = new Date(c.created_at).toLocaleDateString("es-CL", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "long",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                const destino = c.es_general
+                  ? "Todo el Jardín"
+                  : `Nivel: ${c.nivel_nombre || ficha.parvulo?.nivel || "Nivel"}`;
+                let textoWa = `${estilo.iconEmoji} *COMUNICADO OFICIAL*\n*Jardín Infantil Manitos de Ángel*\n\n`;
+                textoWa += `📌 *${c.titulo}*\n`;
+                textoWa += `👥 *Para:* ${destino}\n`;
+                if (c.fecha_evento) {
+                  textoWa += `📅 *Fecha / Plazo:* ${c.fecha_evento}\n`;
+                }
+                textoWa += `\n${c.contenido}\n`;
+                if (c.adjunto_url) {
+                  textoWa += `\n📎 *Documento adjunto:* ${c.adjunto_url}\n`;
+                }
+                const linkWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoWa)}`;
+
+                return (
+                  <article
+                    key={c.id}
+                    className={`rounded-3xl border bg-white/95 p-6 shadow-suave space-y-3 transition hover:shadow-flotante ${
+                      c.fijado ? "border-amber-300 ring-2 ring-amber-100" : "border-white/90"
+                    }`}
+                  >
+                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-cielo-50 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${estilo.badge}`}>
+                          {estilo.iconEmoji} {estilo.label}
+                        </span>
+                        {c.fijado && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                            <Pin className="size-3 text-sol-600" /> Fijado
+                          </span>
+                        )}
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                          {c.es_general ? "Comunidad Jardín" : `Nivel ${c.nivel_nombre || ficha.parvulo?.nivel}`}
+                        </span>
+                      </div>
+                      <span className="text-xs text-tinta-suave capitalize">{fechaPublicacion}</span>
+                    </header>
+
+                    <h3 className="font-display text-base font-bold text-tinta leading-snug">
+                      {c.titulo}
+                    </h3>
+
+                    {c.fecha_evento && (
+                      <div className="flex items-center gap-2 rounded-2xl bg-sol-50/80 border border-sol-200/70 p-2.5 text-xs font-bold text-sol-900">
+                        <Calendar className="size-4 text-sol-600 shrink-0" />
+                        <span>
+                          Fecha del evento o plazo:{" "}
+                          {new Date(`${c.fecha_evento}T12:00:00`).toLocaleDateString("es-CL", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-sm text-tinta font-normal leading-relaxed whitespace-pre-line bg-cielo-50/40 p-4 rounded-2xl border border-cielo-100/60">
+                      {c.contenido}
+                    </div>
+
+                    <footer className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                      {c.adjunto_url ? (
+                        <a
+                          href={c.adjunto_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-cielo-600 hover:text-cielo-700"
+                        >
+                          <ExternalLink className="size-3.5" /> Ver documento o circular adjunta
+                        </a>
+                      ) : (
+                        <span className="text-xs text-tinta-suave">
+                          Publicado por {c.autor_nombre || "Equipo Educativo"}
+                        </span>
+                      )}
+
+                      <a
+                        href={linkWhatsApp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-xs transition hover:scale-105"
+                      >
+                        <MessageCircle className="size-3.5 fill-white" /> Compartir en WhatsApp
+                      </a>
+                    </footer>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-sol-200 bg-white/70 p-12 text-center space-y-3">
+              <Megaphone className="mx-auto size-12 text-sol-400" />
+              <div className="space-y-1">
+                <p className="font-bold text-tinta">No hay comunicados vigentes</p>
+                <p className="text-xs text-tinta-suave max-w-md mx-auto">
+                  Por ahora no hay avisos o notas en el cuaderno de comunicaciones de tu hijo(a). Cuando la educadora o el equipo directivo publiquen circulares o avisos de materiales, aparecerán inmediatamente aquí.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Sección 1: Bitácora de Avances Pedagógicos */}
-      {(pestana === "avances" || typeof window === "undefined") && (
+      {pestana === "avances" && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-xl font-bold text-tinta flex items-center gap-2">
