@@ -28,7 +28,7 @@ const ITEMS: Item[] = [
   { href: "/dashboard/parvulos", etiqueta: "Párvulos", icono: Users },
   { href: "/dashboard/asistencia", etiqueta: "Asistencia", icono: CalendarCheck2 },
   { href: "/dashboard/estadisticas", etiqueta: "Estadísticas", icono: BarChart3 },
-  { href: "/dashboard/bitacora", etiqueta: "Bitácora", icono: NotebookPen, etapa: 3 },
+  { href: "/dashboard/bitacora", etiqueta: "Bitácora", icono: NotebookPen },
   { href: "/dashboard/planificaciones", etiqueta: "Planificaciones", icono: BookHeart, etapa: 4 },
 ];
 

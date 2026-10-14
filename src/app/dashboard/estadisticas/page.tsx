@@ -14,13 +14,17 @@ export const metadata: Metadata = {
   title: "Estadísticas y Porcentajes de Asistencia",
 };
 
-export default async function PaginaEstadisticas(props: PageProps<"/dashboard/estadisticas">) {
+interface PaginaEstadisticasProps {
+  searchParams?: Promise<{ nivel?: string; mes?: string; anio?: string }>;
+}
+
+export default async function PaginaEstadisticas(props: PaginaEstadisticasProps) {
   const sesion = await obtenerSesion();
   if (sesion.tipo !== "ok") {
     redirect("/dashboard");
   }
 
-  const searchParams = await props.searchParams;
+  const searchParams = (await props.searchParams) ?? {};
   const supabase = await createClient();
 
   // 1. Cargar niveles

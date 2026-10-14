@@ -11,13 +11,17 @@ export const metadata: Metadata = {
   title: "Nómina de Párvulos",
 };
 
-export default async function PaginaParvulos(props: PageProps<"/dashboard/parvulos">) {
+interface PaginaParvulosProps {
+  searchParams?: Promise<{ nivel?: string }>;
+}
+
+export default async function PaginaParvulos(props: PaginaParvulosProps) {
   const sesion = await obtenerSesion();
   if (sesion.tipo !== "ok") {
     redirect("/dashboard");
   }
 
-  const searchParams = await props.searchParams;
+  const searchParams = (await props.searchParams) ?? {};
   const supabase = await createClient();
 
   // 1. Cargar todos los niveles

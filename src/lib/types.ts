@@ -101,3 +101,37 @@ export interface RegistroAsistencia {
   registrado_por?: string | null;
   created_at?: string;
 }
+
+export const AREAS_AVANCE = [
+  "Autonomía y Convivencia",
+  "Comunicación y Lenguaje",
+  "Motricidad y Corporalidad",
+  "Alimentación y Rutina",
+  "Pensamiento Matemático",
+  "Exploración del Entorno",
+  "Observación General",
+] as const;
+
+export type AreaAvance = (typeof AREAS_AVANCE)[number];
+
+export interface EntradaBitacora {
+  id: string;
+  parvulo_id: string;
+  nivel_id: string;
+  educadora_id: string | null;
+  fecha: string;
+  area_avance: AreaAvance | string;
+  observacion: string;
+  visible_apoderado: boolean;
+  created_at?: string;
+  educadora?: {
+    id: string;
+    nombre_completo: string;
+  } | null;
+  parvulo?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    rut: string;
+  } | null;
+}

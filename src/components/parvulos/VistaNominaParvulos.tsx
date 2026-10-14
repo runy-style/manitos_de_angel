@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
   Folder,
   FolderX,
+  NotebookPen,
   Pencil,
   Phone,
   Plus,
@@ -302,6 +304,13 @@ export default function VistaNominaParvulos({
                       {/* Acciones */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/dashboard/bitacora?nivelId=${p.nivel_id}&parvuloId=${p.id}`}
+                            title="Ver bitácora de avances del párvulo"
+                            className="grid size-8 place-items-center rounded-xl text-tinta-suave hover:bg-cielo-50 hover:text-cielo-600 transition"
+                          >
+                            <NotebookPen className="size-4 text-cielo-600" />
+                          </Link>
                           <button
                             type="button"
                             onClick={() => abrirEditar(p)}

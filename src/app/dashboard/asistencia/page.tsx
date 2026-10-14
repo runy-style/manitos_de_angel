@@ -12,13 +12,17 @@ export const metadata: Metadata = {
   title: "Control de Asistencia Diaria",
 };
 
-export default async function PaginaAsistencia(props: PageProps<"/dashboard/asistencia">) {
+interface PaginaAsistenciaProps {
+  searchParams?: Promise<{ nivel?: string; fecha?: string }>;
+}
+
+export default async function PaginaAsistencia(props: PaginaAsistenciaProps) {
   const sesion = await obtenerSesion();
   if (sesion.tipo !== "ok") {
     redirect("/dashboard");
   }
 
-  const searchParams = await props.searchParams;
+  const searchParams = (await props.searchParams) ?? {};
   const supabase = await createClient();
 
   // 1. Cargar niveles

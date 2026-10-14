@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   CalendarCheck,
   CheckCircle2,
+  ExternalLink,
   HeartHandshake,
   Loader2,
   Search,
@@ -309,16 +311,37 @@ function ResumenFicha({ ficha }: { ficha: FichaApoderado }) {
       )}
 
       {!!ficha.bitacora?.length && (
-        <div>
-          <p className="mb-2 text-sm font-bold">Última observación de la educadora</p>
-          <blockquote className="rounded-2xl bg-lavanda-100 p-4 text-sm text-tinta">
-            <span className="mb-1 block text-xs font-bold text-lavanda-500">
-              {ficha.bitacora[0].area_avance}
-            </span>
-            {ficha.bitacora[0].observacion}
-          </blockquote>
+        <div className="space-y-2">
+          <p className="text-sm font-bold text-tinta">Observaciones de la educadora ({ficha.bitacora.length})</p>
+          <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
+            {ficha.bitacora.map((b) => (
+              <blockquote key={b.id} className="rounded-2xl bg-lavanda-100/70 p-3.5 text-xs text-tinta">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="font-bold text-lavanda-600">{b.area_avance}</span>
+                  <span className="text-[0.65rem] text-tinta-suave">
+                    {new Date(`${b.fecha}T12:00:00`).toLocaleDateString("es-CL", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+                <p className="whitespace-pre-line leading-relaxed text-tinta/90">{b.observacion}</p>
+              </blockquote>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Botón para ver ficha completa e imprimir */}
+      <div className="pt-2">
+        <Link
+          href={`/apoderado?rut=${encodeURIComponent(ficha.parvulo!.rut)}`}
+          className="boton-sol flex w-full items-center justify-center gap-2 py-3 text-sm font-bold shadow-xs"
+        >
+          <span>Ver Ficha Completa e Imprimir</span>
+          <ExternalLink className="size-4" />
+        </Link>
+      </div>
     </section>
   );
 }
