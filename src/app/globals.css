@@ -1,0 +1,164 @@
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* =========================================================
+   Sistema de diseño · Jardín Infantil Manitos de Ángel
+   Paleta pastel cálida: cielo, menta, sol, coral y lavanda.
+   ========================================================= */
+
+@theme {
+  /* Tipografías amigables infantiles */
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fredoka", "Nunito", ui-sans-serif, sans-serif;
+
+  /* Azul cielo */
+  --color-cielo-50: #f0f8ff;
+  --color-cielo-100: #dcefff;
+  --color-cielo-200: #b9e0fc;
+  --color-cielo-300: #8ccbf5;
+  --color-cielo-400: #5eb3ec;
+  --color-cielo-500: #3b98dc;
+  --color-cielo-600: #2a7bbd;
+  --color-cielo-700: #23639a;
+
+  /* Verde menta */
+  --color-menta-50: #effbf5;
+  --color-menta-100: #d6f5e6;
+  --color-menta-200: #aeead0;
+  --color-menta-300: #82dab5;
+  --color-menta-400: #53c497;
+  --color-menta-500: #33a87c;
+  --color-menta-600: #248765;
+  --color-menta-700: #1f6c52;
+
+  /* Amarillo cálido */
+  --color-sol-50: #fffbeb;
+  --color-sol-100: #fff3c4;
+  --color-sol-200: #ffe68a;
+  --color-sol-300: #ffd65c;
+  --color-sol-400: #fbc23a;
+  --color-sol-500: #eaa412;
+  --color-sol-600: #c47f0b;
+
+  /* Coral suave (acentos y alertas amables) */
+  --color-coral-50: #fff4f1;
+  --color-coral-100: #ffe3db;
+  --color-coral-200: #ffc6b6;
+  --color-coral-300: #ff9f87;
+  --color-coral-400: #f97a5e;
+  --color-coral-500: #e85c3f;
+  --color-coral-600: #c4442a;
+
+  /* Lavanda (detalles) */
+  --color-lavanda-100: #efeaff;
+  --color-lavanda-200: #ddd3ff;
+  --color-lavanda-300: #c3b2fb;
+  --color-lavanda-500: #8b6fe8;
+
+  /* Neutros cálidos */
+  --color-crema: #fffdf8;
+  --color-tinta: #2d3a4a;
+  --color-tinta-suave: #5b6b7f;
+
+  /* Sombras suaves */
+  --shadow-suave: 0 10px 30px -12px rgb(45 58 74 / 0.18);
+  --shadow-flotante: 0 24px 60px -20px rgb(42 123 189 / 0.35);
+
+  /* Animaciones */
+  --animate-flotar: flotar 6s ease-in-out infinite;
+  --animate-flotar-lento: flotar 9s ease-in-out infinite;
+  --animate-aparecer: aparecer 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-modal: modal-entrada 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sacudir: sacudir 0.4s ease-in-out;
+
+  @keyframes flotar {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(2deg); }
+  }
+  @keyframes aparecer {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes modal-entrada {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes sacudir {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-crema text-tinta font-sans antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  ::selection {
+    @apply bg-sol-200 text-tinta;
+  }
+}
+
+/* ---------- Utilidades de componentes reutilizables ---------- */
+
+/* Tarjeta con efecto vidrio sobre fondos pastel */
+@utility tarjeta-vidrio {
+  @apply rounded-3xl border border-white/70 bg-white/75 shadow-suave backdrop-blur-xl;
+}
+
+/* Campos de formulario */
+@utility campo {
+  @apply w-full rounded-2xl border-2 border-cielo-100 bg-white px-4 py-3 text-base text-tinta
+    placeholder:text-tinta-suave/60 outline-none transition
+    focus:border-cielo-400 focus:ring-4 focus:ring-cielo-100;
+}
+@utility campo-error {
+  @apply border-coral-300 focus:border-coral-400 focus:ring-coral-100;
+}
+@utility etiqueta {
+  @apply mb-1.5 block text-sm font-bold text-tinta;
+}
+
+/* Botones */
+@utility boton {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl px-5 py-3 font-bold
+    transition duration-200 active:scale-[0.97]
+    disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100;
+}
+@utility boton-primario {
+  @apply boton bg-linear-to-r from-cielo-500 to-cielo-400 text-white shadow-flotante
+    hover:-translate-y-0.5 hover:from-cielo-600 hover:to-cielo-500;
+}
+@utility boton-menta {
+  @apply boton bg-linear-to-r from-menta-500 to-menta-400 text-white
+    shadow-[0_18px_40px_-18px_rgb(36_135_101/0.6)]
+    hover:-translate-y-0.5 hover:from-menta-600 hover:to-menta-500;
+}
+@utility boton-sol {
+  @apply boton bg-linear-to-r from-sol-400 to-sol-300 text-tinta
+    shadow-[0_18px_40px_-18px_rgb(234_164_18/0.7)]
+    hover:-translate-y-0.5 hover:from-sol-500 hover:to-sol-400;
+}
+@utility boton-suave {
+  @apply boton border-2 border-cielo-100 bg-white text-tinta hover:border-cielo-300 hover:bg-cielo-50;
+}
+
+/* Insignias */
+@utility insignia {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

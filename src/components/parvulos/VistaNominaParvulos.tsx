@@ -1,0 +1,358 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Folder,
+  FolderX,
+  Pencil,
+  Phone,
+  Plus,
+  Power,
+  Search,
+  User,
+  Users,
+} from "lucide-react";
+import ModalParvulo from "./ModalParvulo";
+import { alternarEstadoParvulo } from "@/app/actions/parvulos";
+import { formatearRut } from "@/lib/rut";
+import { puedeEditarNivel } from "@/lib/permisos";
+import type { Nivel, Parvulo, ParvuloConAsistencia, PerfilConNivel } from "@/lib/types";
+
+interface Props {
+  niveles: Nivel[];
+  nivelSeleccionado: Nivel;
+  parvulos: ParvuloConAsistencia[];
+  perfil: PerfilConNivel;
+}
+
+export default function VistaNominaParvulos({
+  niveles,
+  nivelSeleccionado,
+  parvulos,
+  perfil,
+}: Props) {
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<"activos" | "inactivos" | "todos">("activos");
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [parvuloEditar, setParvuloEditar] = useState<Parvulo | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const puedeEditar = puedeEditarNivel(perfil, nivelSeleccionado.id);
+
+  const filtrados = useMemo(() => {
+    return parvulos.filter((p) => {
+      // Filtro de estado
+      if (filtroEstado === "activos" && !p.activo) return false;
+      if (filtroEstado === "inactivos" && p.activo) return false;
+
+      // Filtro de búsqueda
+      if (!busqueda) return true;
+      const q = busqueda.toLowerCase().trim();
+      const nombreCompleto = `${p.nombres} ${p.apellidos}`.toLowerCase();
+      const rutLimpio = p.rut.toLowerCase().replace(/[^0-9k]/g, "");
+      const busquedaLimpia = q.replace(/[^0-9k]/g, "");
+      return nombreCompleto.includes(q) || (busquedaLimpia && rutLimpio.includes(busquedaLimpia));
+    });
+  }, [parvulos, busqueda, filtroEstado]);
+
+  // Alumnos con asistencia menor al 75%
+  const alumnosEnObservacion = useMemo(() => {
+    return parvulos.filter(
+      (p) => p.activo && (p.total_dias ?? 0) > 0 && (p.porcentaje_asistencia ?? 0) < 75,
+    );
+  }, [parvulos]);
+
+  function abrirCrear() {
+    setParvuloEditar(null);
+    setModalAbierto(true);
+  }
+
+  function abrirEditar(p: Parvulo) {
+    setParvuloEditar(p);
+    setModalAbierto(true);
+  }
+
+  function toggleEstado(p: Parvulo) {
+    const accionTexto = p.activo ? "desactivar" : "reactivar";
+    if (confirm(`¿Seguro que deseas ${accionTexto} a ${p.nombres} ${p.apellidos}?`)) {
+      startTransition(async () => {
+        await alternarEstadoParvulo(p.id, !p.activo);
+      });
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Barra superior con filtros y botón de agregar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-tinta-suave/60" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o RUT..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="campo pl-12 py-2.5 text-sm"
+            />
+          </div>
+
+          <div className="flex rounded-2xl bg-white p-1 ring-1 ring-cielo-100 text-xs font-bold text-tinta-suave">
+            <button
+              type="button"
+              onClick={() => setFiltroEstado("activos")}
+              className={`rounded-xl px-3 py-1.5 transition ${
+                filtroEstado === "activos" ? "bg-cielo-500 text-white shadow-xs" : "hover:text-tinta"
+              }`}
+            >
+              Activos ({parvulos.filter((p) => p.activo).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroEstado("inactivos")}
+              className={`rounded-xl px-3 py-1.5 transition ${
+                filtroEstado === "inactivos" ? "bg-cielo-500 text-white shadow-xs" : "hover:text-tinta"
+              }`}
+            >
+              Inactivos ({parvulos.filter((p) => !p.activo).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroEstado("todos")}
+              className={`rounded-xl px-3 py-1.5 transition ${
+                filtroEstado === "todos" ? "bg-cielo-500 text-white shadow-xs" : "hover:text-tinta"
+              }`}
+            >
+              Todos
+            </button>
+          </div>
+        </div>
+
+        {/* Botón Agregar Párvulo */}
+        <button
+          id="btn-agregar-parvulo"
+          type="button"
+          onClick={abrirCrear}
+          disabled={!puedeEditar}
+          title={
+            puedeEditar
+              ? "Inscribir nuevo párvulo en este nivel"
+              : "Solo lectura: solo la educadora a cargo puede inscribir párvulos."
+          }
+          className="boton-menta shrink-0 text-sm py-2.5"
+        >
+          <Plus className="size-4" /> Agregar Párvulo
+        </button>
+      </div>
+
+      {/* Alerta de párvulos con asistencia < 75% */}
+      {alumnosEnObservacion.length > 0 && (
+        <aside
+          role="status"
+          aria-label="Atención por baja asistencia"
+          className="flex items-center gap-3 rounded-2xl bg-coral-50 p-4 ring-1 ring-coral-200 text-coral-700 animate-aparecer"
+        >
+          <AlertTriangle className="size-5 shrink-0 text-coral-500" />
+          <div className="text-sm">
+            <span className="font-bold">
+              {alumnosEnObservacion.length}{" "}
+              {alumnosEnObservacion.length === 1 ? "párvulo tiene" : "párvulos tienen"} asistencia inferior al 75%:
+            </span>{" "}
+            {alumnosEnObservacion.map((p) => `${p.nombres} ${p.apellidos} (${p.porcentaje_asistencia}%)`).join(", ")}
+          </div>
+        </aside>
+      )}
+
+      {/* Listado de Párvulos */}
+      {filtrados.length === 0 ? (
+        <div className="tarjeta-vidrio p-12 text-center text-tinta-suave">
+          <Users className="mx-auto mb-3 size-12 text-cielo-300" />
+          <h3 className="text-lg font-semibold text-tinta">No se encontraron párvulos</h3>
+          <p className="mt-1 text-sm">
+            {busqueda
+              ? "Prueba cambiando el término de búsqueda o el filtro de estado."
+              : `Aún no hay párvulos inscritos en ${nivelSeleccionado.nombre}.`}
+          </p>
+          {puedeEditar && !busqueda && (
+            <button
+              type="button"
+              onClick={abrirCrear}
+              className="boton-primario mt-5 text-sm py-2.5 px-4"
+            >
+              <Plus className="size-4" /> Inscribir el primer párvulo
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/85 shadow-suave">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-cielo-100 bg-cielo-50/60 text-xs font-bold uppercase tracking-wider text-tinta-suave">
+                <tr>
+                  <th className="px-6 py-4">Párvulo</th>
+                  <th className="px-6 py-4">RUT</th>
+                  <th className="px-6 py-4">Apoderado / Contacto</th>
+                  <th className="px-6 py-4 text-center">Asistencia Acum.</th>
+                  <th className="px-6 py-4 text-center">Google Drive</th>
+                  <th className="px-6 py-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cielo-50">
+                {filtrados.map((p) => {
+                  const pct = p.porcentaje_asistencia ?? 0;
+                  const colorPct =
+                    (p.total_dias ?? 0) === 0
+                      ? "bg-gray-100 text-gray-600"
+                      : pct >= 85
+                      ? "bg-menta-100 text-menta-700"
+                      : pct >= 75
+                      ? "bg-sol-100 text-sol-700"
+                      : "bg-coral-100 text-coral-700 ring-1 ring-coral-300";
+
+                  return (
+                    <tr
+                      key={p.id}
+                      className={`transition hover:bg-cielo-50/30 ${!p.activo ? "opacity-60 bg-gray-50/50" : ""}`}
+                    >
+                      {/* Párvulo */}
+                      <td className="px-6 py-4 font-semibold text-tinta">
+                        <div className="flex items-center gap-3">
+                          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-linear-to-br from-sol-200 to-menta-200 font-display font-bold text-tinta">
+                            {p.nombres[0]}
+                            {p.apellidos[0]}
+                          </span>
+                          <div>
+                            <p className="font-bold">
+                              {p.nombres} {p.apellidos}
+                            </p>
+                            {!p.activo && (
+                              <span className="insignia bg-gray-200 text-gray-700 text-[0.65rem] py-0 px-2">
+                                Inactivo
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* RUT */}
+                      <td className="px-6 py-4 font-mono font-medium text-tinta-suave">
+                        {formatearRut(p.rut)}
+                      </td>
+
+                      {/* Apoderado */}
+                      <td className="px-6 py-4">
+                        {p.nombre_apoderado ? (
+                          <div>
+                            <p className="font-medium text-tinta">{p.nombre_apoderado}</p>
+                            {p.telefono_apoderado && (
+                              <a
+                                href={`tel:${p.telefono_apoderado.replace(/\s+/g, "")}`}
+                                className="inline-flex items-center gap-1 text-xs text-cielo-600 hover:underline"
+                              >
+                                <Phone className="size-3" />
+                                {p.telefono_apoderado}
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-tinta-suave/60">Sin apoderado</span>
+                        )}
+                      </td>
+
+                      {/* Porcentaje Asistencia */}
+                      <td className="px-6 py-4 text-center">
+                        <div className="inline-flex flex-col items-center">
+                          <span className={`insignia text-xs font-bold ${colorPct}`}>
+                            {(p.total_dias ?? 0) === 0 ? "Sin datos" : `${pct}%`}
+                          </span>
+                          {(p.total_dias ?? 0) > 0 && (
+                            <span className="text-[0.65rem] text-tinta-suave mt-0.5">
+                              {p.dias_presente}/{p.total_dias} días
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Carpeta Drive */}
+                      <td className="px-6 py-4 text-center">
+                        {p.drive_folder_url ? (
+                          <a
+                            href={p.drive_folder_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-sol-50 px-3 py-1 text-xs font-bold text-sol-700 hover:bg-sol-100 transition ring-1 ring-sol-200"
+                            title="Abrir carpeta del alumno en Google Drive"
+                          >
+                            <Folder className="size-3.5 text-sol-500" />
+                            Drive <ExternalLink className="size-2.5 opacity-60" />
+                          </a>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-xl bg-gray-50 px-2.5 py-1 text-[0.7rem] text-gray-400"
+                            title="La carpeta se creará en la Etapa 4"
+                          >
+                            <FolderX className="size-3" /> Sin carpeta
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => abrirEditar(p)}
+                            disabled={!puedeEditar}
+                            title={
+                              puedeEditar
+                                ? "Editar datos del párvulo"
+                                : "Solo lectura: solo la educadora del nivel puede editar."
+                            }
+                            className="grid size-8 place-items-center rounded-xl text-tinta-suave hover:bg-cielo-50 hover:text-cielo-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleEstado(p)}
+                            disabled={!puedeEditar || isPending}
+                            title={
+                              puedeEditar
+                                ? p.activo
+                                  ? "Desactivar párvulo"
+                                  : "Reactivar párvulo"
+                                : "Solo lectura"
+                            }
+                            className={`grid size-8 place-items-center rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                              p.activo
+                                ? "text-tinta-suave hover:bg-coral-50 hover:text-coral-600"
+                                : "text-menta-600 hover:bg-menta-50"
+                            }`}
+                          >
+                            <Power className="size-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para crear / editar */}
+      <ModalParvulo
+        abierto={modalAbierto}
+        onCerrar={() => setModalAbierto(false)}
+        niveles={niveles}
+        nivelSeleccionadoId={nivelSeleccionado.id}
+        parvuloEditar={parvuloEditar}
+      />
+    </div>
+  );
+}
