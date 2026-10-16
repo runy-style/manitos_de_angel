@@ -29,11 +29,19 @@ export async function iniciarSesion(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    let mensajeError = "No pudimos iniciar sesión. Intenta nuevamente en unos minutos.";
+    if (error.message === "Invalid login credentials") {
+      mensajeError = "Correo o contraseña incorrectos.";
+    } else if (error.message.includes("Email logins are disabled")) {
+      mensajeError = "El inicio de sesión por correo está deshabilitado en Supabase (Authentication > Providers > Email).";
+    } else if (error.message.includes("Email not confirmed")) {
+      mensajeError = "El correo de esta cuenta aún no ha sido confirmado.";
+    } else if (error.message) {
+      mensajeError = error.message;
+    }
+
     return {
-      error:
-        error.message === "Invalid login credentials"
-          ? "Correo o contraseña incorrectos."
-          : "No pudimos iniciar sesión. Intenta nuevamente en unos minutos.",
+      error: mensajeError,
       email,
     };
   }
