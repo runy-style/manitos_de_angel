@@ -69,7 +69,7 @@ begin
   end if;
 
   v_user_id := gen_random_uuid();
-  v_encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf'));
+  v_encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf', 10));
 
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
@@ -78,18 +78,18 @@ begin
   ) values (
     '00000000-0000-0000-0000-000000000000', v_user_id, 'authenticated', 'authenticated',
     lower(trim(p_email)), v_encrypted_pw, now(),
-    '{"provider":"email","providers":["email"]}',
+    '{"provider":"email","providers":["email"]}'::jsonb,
     jsonb_build_object('nombre_completo', p_nombre),
-    now(), now(), encode(extensions.gen_random_bytes(32), 'hex')
+    now(), now(), ''
   );
 
   insert into auth.identities (
     id, user_id, identity_data, provider, provider_id,
     last_sign_in_at, created_at, updated_at
   ) values (
-    gen_random_uuid(), v_user_id,
+    v_user_id, v_user_id,
     jsonb_build_object('sub', v_user_id::text, 'email', lower(trim(p_email))),
-    'email', lower(trim(p_email)), now(), now(), now()
+    'email', v_user_id::text, now(), now(), now()
   );
 
   insert into public.perfiles (id, nombre_completo, email, rol, nivel_id)
@@ -123,10 +123,12 @@ begin
     return jsonb_build_object('ok', false, 'error', 'La contraseña debe tener al menos 6 caracteres.');
   end if;
 
-  v_encrypted_pw := extensions.crypt(p_nueva_password, extensions.gen_salt('bf'));
+  v_encrypted_pw := extensions.crypt(p_nueva_password, extensions.gen_salt('bf', 10));
 
   update auth.users
   set encrypted_password = v_encrypted_pw,
+      confirmation_token = '',
+      email_confirmed_at = coalesce(email_confirmed_at, now()),
       updated_at = now()
   where id = p_user_id;
 
