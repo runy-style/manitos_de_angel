@@ -346,3 +346,21 @@ export interface ArchivoParvulo {
     nombre_completo: string;
   } | null;
 }
+
+export interface Publicacion {
+  id: string;
+  titulo: string;
+  contenido: string;
+  imagen_url: string | null;
+  autor_id: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  autor?: {
+    id: string;
+    nombre_completo: string;
+    email?: string;
+    rol?: string;
+  } | null;
+}
+

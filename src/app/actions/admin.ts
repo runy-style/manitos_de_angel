@@ -244,3 +244,47 @@ export async function adminEliminarNivelAction(nivelId: string) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+export async function adminLimpiarTodosLosParvulosAction() {
+  try {
+    await asegurarAdmin();
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_limpiar_todos_los_parvulos");
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    const res = data as {
+      ok?: boolean;
+      error?: string;
+      mensaje?: string;
+      parvulos_eliminados?: number;
+    };
+
+    if (!res?.ok) {
+      return { ok: false, error: res?.error || "Error al vaciar la nómina de párvulos." };
+    }
+
+    revalidatePath("/dashboard/parvulos");
+    revalidatePath("/dashboard/asistencia");
+    revalidatePath("/dashboard/bitacora");
+    revalidatePath("/dashboard/licencias");
+    revalidatePath("/dashboard/entrevistas");
+    revalidatePath("/dashboard/estadisticas");
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard");
+    revalidatePath("/apoderado");
+
+    return {
+      ok: true,
+      mensaje:
+        res.mensaje ||
+        `Se eliminaron ${res.parvulos_eliminados ?? 0} párvulos y todos sus registros asociados.`,
+    };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+

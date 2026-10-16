@@ -285,9 +285,46 @@ grant execute on function public.admin_eliminar_nivel(uuid) to authenticated;
 
 
 -- =====================================================================
--- 6. ASIGNAR ROL DE ADMINISTRADOR A TU CUENTA ACTUAL
+-- 6. LIMPIAR TODOS LOS PÁRVULOS DE TODOS LOS NIVELES
+-- =====================================================================
+create or replace function public.admin_limpiar_todos_los_parvulos()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_total integer;
+begin
+  if public.mi_rol() != 'admin' then
+    return jsonb_build_object('ok', false, 'error', 'No tienes permisos de Administrador para vaciar la nómina.');
+  end if;
+
+  select count(*) into v_total from public.parvulos;
+
+  delete from public.asistencia;
+  delete from public.bitacoras;
+  delete from public.archivos_parvulo;
+  delete from public.licencias_medicas;
+  delete from public.entrevistas;
+  delete from public.parvulos;
+
+  return jsonb_build_object(
+    'ok', true,
+    'mensaje', 'Se eliminaron todos los párvulos y sus registros asociados.',
+    'parvulos_eliminados', v_total
+  );
+end;
+$$;
+
+grant execute on function public.admin_limpiar_todos_los_parvulos() to authenticated;
+
+
+-- =====================================================================
+-- 7. ASIGNAR ROL DE ADMINISTRADOR A TU CUENTA ACTUAL
 -- Reemplaza 'tu-correo@ejemplo.com' por el correo con el que inicias sesión
 -- =====================================================================
 -- update public.perfiles
 -- set rol = 'admin'
 -- where email = 'tu-correo@ejemplo.com';
+

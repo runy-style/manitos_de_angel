@@ -14,6 +14,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  Newspaper,
   NotebookPen,
   ShieldCheck,
   Users,
@@ -137,6 +138,25 @@ export default function MenuLateral() {
               </Link>
             );
           })}
+
+          {(perfil.rol === "admin" || perfil.rol === "organizacion") && (
+            <Link
+              href="/dashboard/noticias"
+              id="menu-noticias"
+              onClick={() => setAbierto(false)}
+              className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-[0.95rem] font-bold transition ${
+                ruta.startsWith("/dashboard/noticias")
+                  ? "bg-linear-to-r from-cielo-500 to-cielo-400 text-white shadow-flotante"
+                  : "text-tinta hover:bg-cielo-50 hover:text-cielo-600"
+              }`}
+            >
+              <Newspaper className="size-5 transition group-hover:scale-110" />
+              <span>Noticias Web</span>
+              <span className="ml-auto rounded-lg bg-cielo-100 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-cielo-800">
+                Web
+              </span>
+            </Link>
+          )}
 
           {perfil.rol === "admin" && (
             <div className="pt-3 mt-3 border-t border-sol-200/60">

@@ -25,6 +25,7 @@ import {
   adminCrearUsuarioAction,
   adminEliminarNivelAction,
   adminEliminarUsuarioAction,
+  adminLimpiarTodosLosParvulosAction,
 } from "@/app/actions/admin";
 import type { Nivel, Perfil, Rol } from "@/lib/types";
 
@@ -47,7 +48,8 @@ export default function PanelAdministrador({
   niveles,
   usuarioActualId,
 }: Props) {
-  const [pestana, setPestana] = useState<"usuarios" | "niveles">("usuarios");
+  const [pestana, setPestana] = useState<"usuarios" | "niveles" | "limpieza">("usuarios");
+  const [confirmacionTexto, setConfirmacionTexto] = useState("");
   const [isPending, startTransition] = useTransition();
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
@@ -197,6 +199,33 @@ export default function PanelAdministrador({
     });
   }
 
+  // 8. Limpiar todos los párvulos
+  function handleLimpiarTodosLosParvulos() {
+    if (confirmacionTexto.trim().toUpperCase() !== "ELIMINAR") {
+      setMensajeError('Debes escribir la palabra "ELIMINAR" para confirmar el vaciado de datos.');
+      return;
+    }
+
+    if (
+      !confirm(
+        "ÚLTIMA CONFIRMACIÓN:\n¿Estás seguro de que deseas eliminar permanentemente todos los párvulos, asistencias y registros asociados de todos los niveles?",
+      )
+    ) {
+      return;
+    }
+
+    resetMensajes();
+    startTransition(async () => {
+      const res = await adminLimpiarTodosLosParvulosAction();
+      if (res.ok) {
+        setMensajeExito(res.mensaje || "Nómina de párvulos vaciada exitosamente.");
+        setConfirmacionTexto("");
+      } else {
+        setMensajeError(res.error || "Error al vaciar la nómina de párvulos.");
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       {/* Mensajes de aviso */}
@@ -226,7 +255,7 @@ export default function PanelAdministrador({
 
       {/* Pestañas de Navegación del Administrador */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/80 bg-white/90 p-4 shadow-suave">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setPestana("usuarios")}
@@ -252,6 +281,19 @@ export default function PanelAdministrador({
             <Layers className="size-4" />
             Afinar Niveles ({niveles.length})
           </button>
+
+          <button
+            type="button"
+            onClick={() => setPestana("limpieza")}
+            className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition ${
+              pestana === "limpieza"
+                ? "bg-coral-500 text-white shadow-suave"
+                : "text-tinta hover:bg-cielo-50"
+            }`}
+          >
+            <ShieldAlert className="size-4" />
+            Limpiar Nómina
+          </button>
         </div>
 
         {pestana === "usuarios" ? (
@@ -262,7 +304,7 @@ export default function PanelAdministrador({
           >
             <UserPlus className="size-4" /> Crear Nuevo Usuario
           </button>
-        ) : (
+        ) : pestana === "niveles" ? (
           <button
             type="button"
             onClick={() => setModalCrearNivel(true)}
@@ -270,7 +312,7 @@ export default function PanelAdministrador({
           >
             <Plus className="size-4" /> Agregar Nivel
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* ================================================================= */}
@@ -414,6 +456,107 @@ export default function PanelAdministrador({
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* VISTA 3: LIMPIEZA DE NÓMINA (REINICIO PARA PÁRVULOS REALES) */}
+      {/* ================================================================= */}
+      {pestana === "limpieza" && (
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-coral-200 bg-white/95 p-6 shadow-suave space-y-5">
+            <div className="flex items-start gap-4">
+              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-coral-100 text-coral-600">
+                <ShieldAlert className="size-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-display text-lg font-bold text-tinta">
+                  Vaciar Nómina de Párvulos y Registros Asociados
+                </h3>
+                <p className="text-sm text-tinta-suave">
+                  Esta acción elimina de manera definitiva todos los párvulos de prueba o de años anteriores en <b>todos los niveles</b>, dejándolos listos para matricular a los párvulos reales.
+                </p>
+              </div>
+            </div>
+
+            {/* Resumen de impacto */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-coral-50/70 p-4 border border-coral-100 text-xs space-y-2">
+                <p className="font-bold text-coral-800 uppercase tracking-wide">
+                  Datos que se ELIMINARÁN:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-coral-700">
+                  <li>
+                    Todos los párvulos de todos los niveles (
+                    {niveles.reduce((acc, n) => acc + (n.total_parvulos ?? 0), 0)} párvulos activos)
+                  </li>
+                  <li>Todas las asistencias registradas</li>
+                  <li>Todas las bitácoras pedagógicas</li>
+                  <li>Todas las fotografías y archivos de párvulos</li>
+                  <li>Todas las licencias médicas y justificativos</li>
+                  <li>Todas las entrevistas de apoderados</li>
+                </ul>
+              </div>
+
+              <div className="rounded-2xl bg-menta-50/70 p-4 border border-menta-200 text-xs space-y-2">
+                <p className="font-bold text-menta-800 uppercase tracking-wide">
+                  Datos que se CONSERVAN (No se tocan):
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-menta-700">
+                  <li>Los {niveles.length} Niveles del jardín (Sala Cuna, Medios, etc.)</li>
+                  <li>Las {usuarios.length} Cuentas de educadoras, dirección y contraseñas</li>
+                  <li>Las planificaciones curriculares de nivel</li>
+                  <li>Los comunicados del mural general</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Formulario de confirmación */}
+            <div className="rounded-2xl bg-gray-50 p-5 border border-gray-200 space-y-3">
+              <p className="text-xs font-bold text-tinta">
+                Para confirmar la eliminación total, escribe la palabra{" "}
+                <span className="font-mono text-coral-600 bg-coral-50 px-1.5 py-0.5 rounded border border-coral-200 font-bold">
+                  ELIMINAR
+                </span>{" "}
+                a continuación:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={confirmacionTexto}
+                  onChange={(e) => setConfirmacionTexto(e.target.value)}
+                  placeholder="Escribe ELIMINAR aquí..."
+                  className="campo text-sm font-mono max-w-xs"
+                />
+                <button
+                  type="button"
+                  onClick={handleLimpiarTodosLosParvulos}
+                  disabled={isPending || confirmacionTexto.trim().toUpperCase() !== "ELIMINAR"}
+                  className="boton-coral px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                  Vaciar Nómina de Párvulos Definitivamente
+                </button>
+              </div>
+            </div>
+
+            {/* Alternativa SQL Supabase */}
+            <div className="rounded-2xl bg-cielo-50/60 p-4 border border-cielo-100 text-xs space-y-1.5 text-tinta-suave">
+              <p className="font-bold text-tinta">¿Prefieres ejecutarlo directamente en Supabase?</p>
+              <p>
+                También tienes disponible el script listo para ejecutar en el archivo{" "}
+                <code className="font-mono text-cielo-700 font-bold">
+                  supabase/limpiar_todos_los_parvulos.sql
+                </code>{" "}
+                dentro de tu repositorio. Puedes copiar su contenido y pegarlo en el <b>SQL Editor</b>{" "}
+                de tu panel de Supabase.
+              </p>
+            </div>
           </div>
         </div>
       )}

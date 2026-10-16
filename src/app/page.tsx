@@ -10,8 +10,12 @@ import {
 } from "lucide-react";
 import TarjetaLogin from "@/components/inicio/TarjetaLogin";
 import PortalApoderados from "@/components/inicio/PortalApoderados";
+import SeccionNoticiasPublicas from "@/components/inicio/SeccionNoticiasPublicas";
 import { supabaseConfigurado } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
+import { obtenerPublicacionesActivas } from "@/lib/publicaciones";
+import type { Publicacion } from "@/lib/types";
 
 const CARACTERISTICAS = [
   {
@@ -49,6 +53,16 @@ export default async function Inicio(props: InicioProps) {
   const accesoRequerido = searchParams.acceso === "requerido";
   const sesion = await obtenerSesion();
   const conSesion = sesion.tipo === "ok" || sesion.tipo === "sin-perfil";
+
+  let publicaciones: Publicacion[] = [];
+  if (supabaseConfigurado()) {
+    try {
+      const supabase = await createClient();
+      publicaciones = await obtenerPublicacionesActivas(supabase);
+    } catch {
+      publicaciones = [];
+    }
+  }
 
   return (
     <div className="relative isolate flex-1 overflow-hidden">
@@ -141,6 +155,9 @@ export default async function Inicio(props: InicioProps) {
             />
           </div>
         </section>
+
+        {/* Novedades y Noticias del Jardín */}
+        <SeccionNoticiasPublicas publicaciones={publicaciones} />
 
         {/* Accesos */}
         <section id="acceso" className="mx-auto w-full max-w-6xl scroll-mt-6 px-5 pb-16 sm:px-8">

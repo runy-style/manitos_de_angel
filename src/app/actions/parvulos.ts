@@ -186,6 +186,45 @@ export async function alternarEstadoParvulo(id: string, activoNuevo: boolean): P
   return { ok: true };
 }
 
+export async function eliminarParvulo(id: string): Promise<RespuestaAccion> {
+  const sesion = await obtenerSesion();
+  if (sesion.tipo !== "ok") {
+    return { ok: false, error: "No tienes una sesión activa autorizada." };
+  }
+
+  const supabase = await createClient();
+
+  // Obtener el párvulo para verificar el nivel
+  const { data: parvulo } = await supabase
+    .from("parvulos")
+    .select("id, nombres, apellidos, nivel_id")
+    .eq("id", id)
+    .single<{ id: string; nombres: string; apellidos: string; nivel_id: string }>();
+
+  if (!parvulo) {
+    return { ok: false, error: "El párvulo no fue encontrado o ya fue eliminado." };
+  }
+
+  if (!puedeEditarNivel(sesion.perfil, parvulo.nivel_id)) {
+    return {
+      ok: false,
+      error: "Solo la educadora a cargo del nivel o administración pueden eliminar este párvulo.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("parvulos")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return { ok: false, error: "Error al eliminar el párvulo: " + error.message };
+  }
+
+  revalidarRutas();
+  return { ok: true };
+}
+
 export async function actualizarPinParvuloAction(
   parvuloId: string,
   nuevoPin: string | null,
@@ -250,6 +289,9 @@ export async function establecerPinApoderadoAction(
 function revalidarRutas() {
   revalidatePath("/dashboard/parvulos");
   revalidatePath("/dashboard/asistencia");
+  revalidatePath("/dashboard/bitacora");
+  revalidatePath("/dashboard/licencias");
+  revalidatePath("/dashboard/entrevistas");
   revalidatePath("/dashboard/estadisticas");
   revalidatePath("/dashboard");
   revalidatePath("/apoderado");

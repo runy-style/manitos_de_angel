@@ -16,13 +16,14 @@ import {
   Plus,
   Power,
   Search,
+  Trash2,
   Unlock,
   User,
   Users,
 } from "lucide-react";
 import ModalParvulo from "./ModalParvulo";
 import ModalArchivosParvulo from "./ModalArchivosParvulo";
-import { alternarEstadoParvulo } from "@/app/actions/parvulos";
+import { alternarEstadoParvulo, eliminarParvulo } from "@/app/actions/parvulos";
 import { formatearRut } from "@/lib/rut";
 import { puedeEditarNivel } from "@/lib/permisos";
 import type { Nivel, Parvulo, ParvuloConAsistencia, PerfilConNivel } from "@/lib/types";
@@ -89,6 +90,20 @@ export default function VistaNominaParvulos({
         await alternarEstadoParvulo(p.id, !p.activo);
       });
     }
+  }
+
+  function handleEliminar(p: Parvulo) {
+    const confirmacion = confirm(
+      `¿Estás seguro de que deseas ELIMINAR a ${p.nombres} ${p.apellidos}?\n\nEsta acción eliminará de forma permanente al párvulo y todos sus registros (asistencias, bitácoras, licencias y archivos).`,
+    );
+    if (!confirmacion) return;
+
+    startTransition(async () => {
+      const res = await eliminarParvulo(p.id);
+      if (!res.ok) {
+        alert(res.error || "No se pudo eliminar el párvulo.");
+      }
+    });
   }
 
   return (
@@ -368,11 +383,24 @@ export default function VistaNominaParvulos({
                             }
                             className={`grid size-8 place-items-center rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed ${
                               p.activo
-                                ? "text-tinta-suave hover:bg-coral-50 hover:text-coral-600"
+                                ? "text-tinta-suave hover:bg-sol-50 hover:text-sol-600"
                                 : "text-menta-600 hover:bg-menta-50"
                             }`}
                           >
                             <Power className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEliminar(p)}
+                            disabled={!puedeEditar || isPending}
+                            title={
+                              puedeEditar
+                                ? "Eliminar párvulo definitivamente"
+                                : "Solo lectura"
+                            }
+                            className="grid size-8 place-items-center rounded-xl text-tinta-suave hover:bg-coral-50 hover:text-coral-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                          >
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
                       </td>

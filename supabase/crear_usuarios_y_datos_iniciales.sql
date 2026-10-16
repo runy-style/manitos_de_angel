@@ -656,66 +656,69 @@ $$;
 
 
 -- =====================================================================
--- SECCIÓN 6: DATOS DE PRUEBA (Párvulos, Asistencia, Bitácora y Licencia)
+-- SECCIÓN 6: DATOS DE PRUEBA (DESACTIVADA PARA PRODUCCIÓN / PÁRVULOS REALES)
 -- =====================================================================
-
-do $$
-declare
-  v_sc_menor uuid;
-  v_medio_menor uuid;
-  v_parvulo1 uuid;
-  v_parvulo2 uuid;
-  v_educadora1 uuid;
-begin
-  select id into v_sc_menor from public.niveles where nombre = 'Sala Cuna Menor';
-  select id into v_medio_menor from public.niveles where nombre = 'Nivel Medio Menor';
-  select id into v_educadora1 from public.perfiles where email = 'educadora.salacuna@manitos.cl';
-
-  -- Párvulo 1: Mateo Morales en Sala Cuna Menor
-  insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
-  values ('25.432.189-K', 'Mateo Ignacio', 'Morales Silva', '2024-03-15', 'Carolina Silva', '+56 9 8765 4321', v_sc_menor, true)
-  on conflict (rut) do update set nombres = excluded.nombres
-  returning id into v_parvulo1;
-
-  -- Párvulo 2: Sofía Rojas en Sala Cuna Menor
-  insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
-  values ('25.876.543-2', 'Sofía Antonella', 'Rojas Castillo', '2024-05-20', 'Gonzalo Rojas', '+56 9 1234 5678', v_sc_menor, true)
-  on conflict (rut) do update set nombres = excluded.nombres
-  returning id into v_parvulo2;
-
-  -- Párvulo 3: Lucas Araya en Medio Menor
-  insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
-  values ('24.981.234-5', 'Lucas Benjamín', 'Araya Muñoz', '2023-08-10', 'Patricia Muñoz', '+56 9 5555 4444', v_medio_menor, true)
-  on conflict (rut) do nothing;
-
-  if v_parvulo1 is not null and v_educadora1 is not null then
-    -- Bitácora de Mateo
-    insert into public.bitacoras (parvulo_id, nivel_id, educadora_id, fecha, area_avance, observacion, visible_apoderado)
-    values
-      (v_parvulo1, v_sc_menor, v_educadora1, current_date - 1, 'Motricidad y Exploración', 'Mateo logró dar sus primeros pasos firmes sosteniéndose de la barra de apoyo.', true),
-      (v_parvulo1, v_sc_menor, v_educadora1, current_date, 'Alimentación y Rutina', 'Aceptó excelente la fruta picada y descansó muy bien.', true)
-    on conflict do nothing;
-
-    -- Asistencia de Mateo
-    insert into public.asistencia (parvulo_id, nivel_id, fecha, estado, observacion_dia, registrado_por)
-    values
-      (v_parvulo1, v_sc_menor, current_date - 2, 'presente', 'Llegó muy contento con su peluche', v_educadora1),
-      (v_parvulo1, v_sc_menor, current_date - 1, 'presente', null, v_educadora1),
-      (v_parvulo1, v_sc_menor, current_date, 'presente', 'Asistencia normal', v_educadora1)
-    on conflict (parvulo_id, fecha) do nothing;
-
-    -- Licencia médica de prueba pendiente para Mateo (subida por su apoderada)
-    insert into public.licencias_medicas (
-      parvulo_id, nivel_id, fecha_emision, fecha_inicio, fecha_termino, dias_reposo,
-      diagnostico_motivo, drive_file_url, nombre_archivo, estado
-    ) values (
-      v_parvulo1, v_sc_menor, current_date, current_date + 1, current_date + 3, 3,
-      'Cuadro febril viral en observación pediátrica',
-      'https://drive.google.com',
-      'Certificado_Medico_Mateo_Morales.pdf',
-      'pendiente'
-    )
-    on conflict do nothing;
-  end if;
-end;
-$$;
+-- Si necesitas volver a cargar datos ficticios de demostración, puedes
+-- descomentar el bloque siguiente. Para producción con párvulos reales se
+-- mantiene desactivado.
+--
+-- do $$
+-- declare
+--   v_sc_menor uuid;
+--   v_medio_menor uuid;
+--   v_parvulo1 uuid;
+--   v_parvulo2 uuid;
+--   v_educadora1 uuid;
+-- begin
+--   select id into v_sc_menor from public.niveles where nombre = 'Sala Cuna Menor';
+--   select id into v_medio_menor from public.niveles where nombre = 'Nivel Medio Menor';
+--   select id into v_educadora1 from public.perfiles where email = 'educadora.salacuna@manitos.cl';
+--
+--   -- Párvulo 1: Mateo Morales en Sala Cuna Menor
+--   insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
+--   values ('25.432.189-K', 'Mateo Ignacio', 'Morales Silva', '2024-03-15', 'Carolina Silva', '+56 9 8765 4321', v_sc_menor, true)
+--   on conflict (rut) do update set nombres = excluded.nombres
+--   returning id into v_parvulo1;
+--
+--   -- Párvulo 2: Sofía Rojas en Sala Cuna Menor
+--   insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
+--   values ('25.876.543-2', 'Sofía Antonella', 'Rojas Castillo', '2024-05-20', 'Gonzalo Rojas', '+56 9 1234 5678', v_sc_menor, true)
+--   on conflict (rut) do update set nombres = excluded.nombres
+--   returning id into v_parvulo2;
+--
+--   -- Párvulo 3: Lucas Araya en Medio Menor
+--   insert into public.parvulos (rut, nombres, apellidos, fecha_nacimiento, nombre_apoderado, telefono_apoderado, nivel_id, activo)
+--   values ('24.981.234-5', 'Lucas Benjamín', 'Araya Muñoz', '2023-08-10', 'Patricia Muñoz', '+56 9 5555 4444', v_medio_menor, true)
+--   on conflict (rut) do nothing;
+--
+--   if v_parvulo1 is not null and v_educadora1 is not null then
+--     -- Bitácora de Mateo
+--     insert into public.bitacoras (parvulo_id, nivel_id, educadora_id, fecha, area_avance, observacion, visible_apoderado)
+--     values
+--       (v_parvulo1, v_sc_menor, v_educadora1, current_date - 1, 'Motricidad y Exploración', 'Mateo logró dar sus primeros pasos firmes sosteniéndose de la barra de apoyo.', true),
+--       (v_parvulo1, v_sc_menor, v_educadora1, current_date, 'Alimentación y Rutina', 'Aceptó excelente la fruta picada y descansó muy bien.', true)
+--     on conflict do nothing;
+--
+--     -- Asistencia de Mateo
+--     insert into public.asistencia (parvulo_id, nivel_id, fecha, estado, observacion_dia, registrado_por)
+--     values
+--       (v_parvulo1, v_sc_menor, current_date - 2, 'presente', 'Llegó muy contento con su peluche', v_educadora1),
+--       (v_parvulo1, v_sc_menor, current_date - 1, 'presente', null, v_educadora1),
+--       (v_parvulo1, v_sc_menor, current_date, 'presente', 'Asistencia normal', v_educadora1)
+--     on conflict (parvulo_id, fecha) do nothing;
+--
+--     -- Licencia médica de prueba pendiente para Mateo (subida por su apoderada)
+--     insert into public.licencias_medicas (
+--       parvulo_id, nivel_id, fecha_emision, fecha_inicio, fecha_termino, dias_reposo,
+--       diagnostico_motivo, drive_file_url, nombre_archivo, estado
+--     ) values (
+--       v_parvulo1, v_sc_menor, current_date, current_date + 1, current_date + 3, 3,
+--       'Cuadro febril viral en observación pediátrica',
+--       'https://drive.google.com',
+--       'Certificado_Medico_Mateo_Morales.pdf',
+--       'pendiente'
+--     )
+--     on conflict do nothing;
+--   end if;
+-- end;
+-- $$;
