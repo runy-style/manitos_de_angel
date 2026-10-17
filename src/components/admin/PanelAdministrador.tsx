@@ -115,12 +115,15 @@ export default function PanelAdministrador({
     const formData = new FormData(e.currentTarget);
     const nombre = String(formData.get("nombre") ?? "");
     const rol = String(formData.get("rol") ?? "educadora") as Rol;
-    const nivelId = String(formData.get("nivel_id") ?? "") || null;
+    const nivelIds = formData
+      .getAll("nivel_ids")
+      .map((id) => String(id))
+      .filter(Boolean);
 
     startTransition(async () => {
-      const res = await adminActualizarUsuarioAction(modalEditarUser.id, nombre, rol, nivelId);
+      const res = await adminActualizarUsuarioAction(modalEditarUser.id, nombre, rol, nivelIds);
       if (res.ok) {
-        setMensajeExito("Perfil del usuario actualizado correctamente.");
+        setMensajeExito("Perfil del usuario y niveles asignados actualizados correctamente.");
         setModalEditarUser(null);
       } else {
         setMensajeError(res.error || "No se pudo actualizar el perfil.");
@@ -357,15 +360,28 @@ export default function PanelAdministrador({
                       </span>
                     </div>
 
-                    <div className="rounded-2xl bg-cielo-50/50 p-3 text-xs space-y-1">
+                    <div className="rounded-2xl bg-cielo-50/50 p-3 text-xs space-y-1.5">
                       <p className="font-semibold text-tinta">
-                        Nivel a cargo:{" "}
-                        <span className="text-cielo-700 font-bold">
-                          {u.rol === "educadora"
-                            ? u.nivel?.nombre ?? "Sin nivel asignado"
-                            : "Todos los niveles (Visión global)"}
-                        </span>
+                        {u.rol === "educadora" ? "Niveles a cargo:" : "Cobertura:"}
                       </p>
+                      {u.rol === "educadora" ? (
+                        u.niveles && u.niveles.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {u.niveles.map((nl) => (
+                              <span
+                                key={nl.id}
+                                className="rounded-lg bg-cielo-100 px-2 py-0.5 text-[0.7rem] font-bold text-cielo-800 border border-cielo-200"
+                              >
+                                {nl.nombre}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-tinta-suave italic">Sin nivel asignado</span>
+                        )
+                      ) : (
+                        <span className="text-cielo-700 font-bold">Todos los niveles (Visión global)</span>
+                      )}
                     </div>
                   </div>
 
@@ -620,26 +636,37 @@ export default function PanelAdministrador({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-tinta mb-1">Rol / Permiso</label>
-                  <select name="rol" defaultValue="educadora" className="campo text-sm">
-                    <option value="educadora">Educadora de Nivel</option>
-                    <option value="organizacion">Organización / Lectura</option>
-                    <option value="admin">Administrador Total</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-tinta mb-1">Rol / Permiso</label>
+                <select name="rol" defaultValue="educadora" className="campo text-sm">
+                  <option value="educadora">Educadora de Nivel</option>
+                  <option value="organizacion">Organización / Lectura</option>
+                  <option value="admin">Administrador Total</option>
+                </select>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-tinta mb-1">Nivel Asignado</label>
-                  <select name="nivel_id" className="campo text-sm">
-                    <option value="">(Ninguno / Global)</option>
-                    {niveles.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.nombre}
-                      </option>
-                    ))}
-                  </select>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-tinta">
+                  Niveles Asignados a Cargo
+                  <span className="block text-[0.7rem] font-normal text-tinta-suave">
+                    Puedes marcar más de un nivel si la educadora está a cargo de múltiples salas:
+                  </span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1.5 rounded-2xl bg-cielo-50/50 border border-cielo-100">
+                  {niveles.map((n) => (
+                    <label
+                      key={n.id}
+                      className="flex items-center gap-2 rounded-xl bg-white p-2.5 text-xs font-semibold text-tinta border border-cielo-100 hover:border-cielo-300 cursor-pointer transition select-none shadow-2xs"
+                    >
+                      <input
+                        type="checkbox"
+                        name="nivel_ids"
+                        value={n.id}
+                        className="size-4 rounded text-cielo-600 focus:ring-cielo-500 accent-cielo-600"
+                      />
+                      <span className="truncate">{n.nombre}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -767,30 +794,45 @@ export default function PanelAdministrador({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-tinta mb-1">Rol / Permiso</label>
-                  <select name="rol" defaultValue={modalEditarUser.rol} className="campo text-sm">
-                    <option value="educadora">Educadora de Nivel</option>
-                    <option value="organizacion">Organización / Lectura</option>
-                    <option value="admin">Administrador Total</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-tinta mb-1">Rol / Permiso</label>
+                <select name="rol" defaultValue={modalEditarUser.rol} className="campo text-sm">
+                  <option value="educadora">Educadora de Nivel</option>
+                  <option value="organizacion">Organización / Lectura</option>
+                  <option value="admin">Administrador Total</option>
+                </select>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-tinta mb-1">Nivel Asignado</label>
-                  <select
-                    name="nivel_id"
-                    defaultValue={modalEditarUser.nivel_id ?? ""}
-                    className="campo text-sm"
-                  >
-                    <option value="">(Sin nivel / Global)</option>
-                    {niveles.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.nombre}
-                      </option>
-                    ))}
-                  </select>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-tinta">
+                  Niveles Asignados a Cargo
+                  <span className="block text-[0.7rem] font-normal text-tinta-suave">
+                    Marca todos los niveles en los que esta educadora tendrá permisos:
+                  </span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1.5 rounded-2xl bg-cielo-50/50 border border-cielo-100">
+                  {niveles.map((n) => {
+                    const estaAsignado =
+                      modalEditarUser.niveles_ids?.includes(n.id) ||
+                      modalEditarUser.niveles?.some((nl) => nl.id === n.id) ||
+                      modalEditarUser.nivel_id === n.id;
+
+                    return (
+                      <label
+                        key={n.id}
+                        className="flex items-center gap-2 rounded-xl bg-white p-2.5 text-xs font-semibold text-tinta border border-cielo-100 hover:border-cielo-300 cursor-pointer transition select-none shadow-2xs"
+                      >
+                        <input
+                          type="checkbox"
+                          name="nivel_ids"
+                          value={n.id}
+                          defaultChecked={Boolean(estaAsignado)}
+                          className="size-4 rounded text-cielo-600 focus:ring-cielo-500 accent-cielo-600"
+                        />
+                        <span className="truncate">{n.nombre}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

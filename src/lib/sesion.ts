@@ -33,5 +33,32 @@ export const obtenerSesion = cache(async (): Promise<EstadoSesion> => {
 
   if (!perfil) return { tipo: "sin-perfil", email: user.email ?? null };
 
-  return { tipo: "ok", perfil };
+  const nivelesLista: { id: string; nombre: string }[] = [];
+  if (perfil.nivel) {
+    nivelesLista.push(perfil.nivel);
+  }
+
+  try {
+    const { data: extras } = await supabase
+      .from("educadoras_niveles")
+      .select("nivel:niveles(id, nombre)")
+      .eq("educadora_id", user.id);
+
+    extras?.forEach((item: any) => {
+      const n = item?.nivel;
+      if (n && typeof n.id === "string" && !nivelesLista.some((existente) => existente.id === n.id)) {
+        nivelesLista.push({ id: n.id, nombre: n.nombre });
+      }
+    });
+  } catch {
+    // Respaldo silencioso si la migración aún no se ha ejecutado en Supabase
+  }
+
+  const perfilCompleto: PerfilConNivel = {
+    ...perfil,
+    niveles: nivelesLista,
+    niveles_ids: nivelesLista.map((n) => n.id),
+  };
+
+  return { tipo: "ok", perfil: perfilCompleto };
 });

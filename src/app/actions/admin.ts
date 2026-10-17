@@ -20,7 +20,11 @@ export async function adminCrearUsuarioAction(formData: FormData) {
     const password = String(formData.get("password") ?? "");
     const nombre = String(formData.get("nombre") ?? "").trim();
     const rol = String(formData.get("rol") ?? "educadora") as Rol;
-    const nivelId = String(formData.get("nivel_id") ?? "") || null;
+    const nivelIds = formData
+      .getAll("nivel_ids")
+      .map((id) => String(id))
+      .filter(Boolean);
+    const nivelId = nivelIds[0] || String(formData.get("nivel_id") ?? "") || null;
 
     if (!email || !password || !nombre) {
       return { ok: false, error: "Ingresa el nombre, correo y contraseña inicial." };
@@ -37,15 +41,41 @@ export async function adminCrearUsuarioAction(formData: FormData) {
       p_nombre: nombre,
       p_rol: rol,
       p_nivel_id: rol === "educadora" ? nivelId : null,
+      p_nivel_ids: rol === "educadora" ? nivelIds : [],
     });
 
+    let newUserId: string | undefined;
+
     if (error) {
-      return { ok: false, error: error.message };
+      // Si la función en Supabase todavía no tiene el parámetro p_nivel_ids, intentar con la firma clásica
+      const fallback = await supabase.rpc("admin_crear_usuario", {
+        p_email: email,
+        p_password: password,
+        p_nombre: nombre,
+        p_rol: rol,
+        p_nivel_id: rol === "educadora" ? nivelId : null,
+      });
+
+      if (fallback.error) {
+        return { ok: false, error: fallback.error.message };
+      }
+      newUserId = (fallback.data as { user_id?: string })?.user_id;
+    } else {
+      const res = data as { ok?: boolean; error?: string; user_id?: string };
+      if (!res?.ok) {
+        return { ok: false, error: res?.error || "No se pudo crear el usuario." };
+      }
+      newUserId = res.user_id;
     }
 
-    const res = data as { ok?: boolean; error?: string };
-    if (!res?.ok) {
-      return { ok: false, error: res?.error || "No se pudo crear el usuario." };
+    // Sincronizar tabla educadoras_niveles
+    if (newUserId && rol === "educadora" && nivelIds.length > 0) {
+      try {
+        const rows = nivelIds.map((nid) => ({ educadora_id: newUserId!, nivel_id: nid }));
+        await supabase.from("educadoras_niveles").upsert(rows, { onConflict: "educadora_id,nivel_id" });
+      } catch {
+        // Fallback si la tabla aún no se ha creado
+      }
     }
 
     revalidatePath("/dashboard/admin");
@@ -89,7 +119,7 @@ export async function adminActualizarUsuarioAction(
   userId: string,
   nombre: string,
   rol: Rol,
-  nivelId: string | null,
+  nivelIds: string[],
 ) {
   try {
     await asegurarAdmin();
@@ -99,24 +129,43 @@ export async function adminActualizarUsuarioAction(
     }
 
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("admin_actualizar_usuario", {
+    const nivelIdPrincipal = rol === "educadora" && nivelIds.length > 0 ? nivelIds[0] : null;
+
+    // Intentar actualizar mediante la función de múltiples niveles
+    const { error } = await supabase.rpc("admin_actualizar_usuario_niveles", {
       p_user_id: userId,
       p_nombre: nombre.trim(),
       p_rol: rol,
-      p_nivel_id: rol === "educadora" ? nivelId : null,
+      p_nivel_ids: rol === "educadora" ? nivelIds : [],
     });
 
     if (error) {
-      return { ok: false, error: error.message };
+      // Fallback a admin_actualizar_usuario clásico
+      const fallback = await supabase.rpc("admin_actualizar_usuario", {
+        p_user_id: userId,
+        p_nombre: nombre.trim(),
+        p_rol: rol,
+        p_nivel_id: nivelIdPrincipal,
+      });
+
+      if (fallback.error) {
+        return { ok: false, error: fallback.error.message };
+      }
     }
 
-    const res = data as { ok?: boolean; error?: string };
-    if (!res?.ok) {
-      return { ok: false, error: res?.error || "Error al actualizar el usuario." };
+    // Sincronizar tabla educadoras_niveles
+    try {
+      await supabase.from("educadoras_niveles").delete().eq("educadora_id", userId);
+      if (rol === "educadora" && nivelIds.length > 0) {
+        const rows = nivelIds.map((nid) => ({ educadora_id: userId, nivel_id: nid }));
+        await supabase.from("educadoras_niveles").insert(rows);
+      }
+    } catch {
+      // Fallback si la tabla aún no se ha creado
     }
 
     revalidatePath("/dashboard/admin");
-    return { ok: true, mensaje: "Datos del usuario actualizados correctamente." };
+    return { ok: true, mensaje: "Datos del usuario y niveles asignados actualizados correctamente." };
   } catch (err: unknown) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }

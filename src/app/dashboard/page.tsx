@@ -70,7 +70,17 @@ export default async function PanelInicio() {
         </h1>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <InsigniaRol rol={perfil.rol} className="bg-white/90!" />
-          {perfil.nivel && <span className="insignia bg-white/25 text-white ring-1 ring-white/40">Nivel: {perfil.nivel.nombre}</span>}
+          {perfil.niveles && perfil.niveles.length > 0 ? (
+            perfil.niveles.map((n) => (
+              <span key={n.id} className="insignia bg-white/25 text-white ring-1 ring-white/40">
+                Nivel: {n.nombre}
+              </span>
+            ))
+          ) : perfil.nivel ? (
+            <span className="insignia bg-white/25 text-white ring-1 ring-white/40">
+              Nivel: {perfil.nivel.nombre}
+            </span>
+          ) : null}
         </div>
       </header>
 
@@ -100,16 +110,18 @@ export default async function PanelInicio() {
             {esAdmin
               ? "Administrador del Sistema — Permisos Totales"
               : esEducadora
-              ? "Puedes editar tu nivel asignado"
+              ? "Puedes editar tus niveles asignados"
               : "Modo solo lectura"}
           </h2>
           <p className="text-sm text-tinta-suave">
             {esAdmin
               ? "Tienes permisos completos para inscribir párvulos, registrar asistencia, bitácoras y gestionar archivos en todos los niveles del jardín infantil."
               : esEducadora
-              ? perfil.nivel
+              ? perfil.niveles && perfil.niveles.length > 0
+                ? `Registras asistencia, bitácoras, planificaciones y archivos de: ${perfil.niveles.map((n) => n.nombre).join(", ")}. Los demás niveles los ves en solo lectura.`
+                : perfil.nivel
                 ? `Registras asistencia, bitácoras, planificaciones y archivos de ${perfil.nivel.nombre}. Los demás niveles los ves en solo lectura.`
-                : "Aún no tienes un nivel asignado. Pide a la dirección que lo configure en tu perfil."
+                : "Aún no tienes un nivel asignado. Pide a la administración que lo configure en tu perfil."
               : "Puedes revisar todos los niveles, estadísticas, bitácoras y planificaciones del jardín, sin modificar los registros de las educadoras."}
           </p>
         </div>

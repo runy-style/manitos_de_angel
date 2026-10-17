@@ -41,7 +41,46 @@ export default async function PaginaAdmin() {
     `)
     .order("nombre_completo");
 
-  const usuarios = (usuariosRaw as unknown as PerfilConNivelData[]) ?? [];
+  // Cargar asignaciones de educadoras_niveles
+  const asignacionesMap = new Map<string, { id: string; nombre: string }[]>();
+  try {
+    const { data: asignacionesRaw } = await supabase
+      .from("educadoras_niveles")
+      .select("educadora_id, nivel:niveles(id, nombre)");
+
+    asignacionesRaw?.forEach((item: any) => {
+      const eId = item?.educadora_id;
+      const n = item?.nivel;
+      if (eId && n && typeof n.id === "string") {
+        const lista = asignacionesMap.get(eId) ?? [];
+        if (!lista.some((existente) => existente.id === n.id)) {
+          lista.push({ id: n.id, nombre: n.nombre });
+        }
+        asignacionesMap.set(eId, lista);
+      }
+    });
+  } catch {
+    // Respaldo silencioso si la migración de múltiples niveles aún no se corre
+  }
+
+  const usuarios: PerfilConNivelData[] = ((usuariosRaw as unknown as PerfilConNivelData[]) ?? []).map((u) => {
+    const listaNiveles: { id: string; nombre: string }[] = [];
+    if (u.nivel) {
+      listaNiveles.push(u.nivel);
+    }
+    const extras = asignacionesMap.get(u.id) ?? [];
+    extras.forEach((ex) => {
+      if (!listaNiveles.some((l) => l.id === ex.id)) {
+        listaNiveles.push(ex);
+      }
+    });
+
+    return {
+      ...u,
+      niveles: listaNiveles,
+      niveles_ids: listaNiveles.map((n) => n.id),
+    };
+  });
 
   // 2. Cargar todos los niveles con conteo de párvulos
   const { data: nivelesRaw } = await supabase

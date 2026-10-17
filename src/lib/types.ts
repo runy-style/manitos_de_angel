@@ -17,10 +17,14 @@ export interface Perfil {
   email: string;
   rol: Rol;
   nivel_id: string | null;
+  niveles?: Pick<Nivel, "id" | "nombre">[];
+  niveles_ids?: string[];
 }
 
 export interface PerfilConNivel extends Perfil {
   nivel: Pick<Nivel, "id" | "nombre"> | null;
+  niveles?: Pick<Nivel, "id" | "nombre">[];
+  niveles_ids?: string[];
 }
 
 export type EstadoAsistencia = "presente" | "ausente" | "justificado";
