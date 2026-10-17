@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
+  FileSpreadsheet,
   Folder,
   FolderOpen,
   FolderX,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import ModalParvulo from "./ModalParvulo";
 import ModalArchivosParvulo from "./ModalArchivosParvulo";
+import ModalCargaMasivaParvulos from "./ModalCargaMasivaParvulos";
 import { alternarEstadoParvulo, eliminarParvulo } from "@/app/actions/parvulos";
 import { formatearRut } from "@/lib/rut";
 import { puedeEditarNivel } from "@/lib/permisos";
@@ -44,6 +46,7 @@ export default function VistaNominaParvulos({
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<"activos" | "inactivos" | "todos">("activos");
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalCargaMasivaAbierto, setModalCargaMasivaAbierto] = useState(false);
   const [parvuloEditar, setParvuloEditar] = useState<Parvulo | null>(null);
   const [parvuloArchivos, setParvuloArchivos] = useState<Parvulo | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -153,21 +156,38 @@ export default function VistaNominaParvulos({
           </div>
         </div>
 
-        {/* Botón Agregar Párvulo */}
-        <button
-          id="btn-agregar-parvulo"
-          type="button"
-          onClick={abrirCrear}
-          disabled={!puedeEditar}
-          title={
-            puedeEditar
-              ? "Inscribir nuevo párvulo en este nivel"
-              : "Solo lectura: solo la educadora a cargo o administración pueden inscribir párvulos."
-          }
-          className="boton-menta shrink-0 text-sm py-2.5"
-        >
-          <Plus className="size-4" /> Agregar Párvulo
-        </button>
+        {/* Botones de Acción */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            id="btn-carga-masiva-parvulo"
+            type="button"
+            onClick={() => setModalCargaMasivaAbierto(true)}
+            disabled={!puedeEditar}
+            title={
+              puedeEditar
+                ? "Importar nómina de alumnos en bloque"
+                : "Solo lectura: solo la educadora a cargo o administración pueden importar párvulos."
+            }
+            className="boton-suave text-sm py-2.5 flex items-center gap-2 border border-cielo-200 hover:border-cielo-300"
+          >
+            <FileSpreadsheet className="size-4 text-cielo-600" /> Carga en Bloque
+          </button>
+
+          <button
+            id="btn-agregar-parvulo"
+            type="button"
+            onClick={abrirCrear}
+            disabled={!puedeEditar}
+            title={
+              puedeEditar
+                ? "Inscribir nuevo párvulo en este nivel"
+                : "Solo lectura: solo la educadora a cargo o administración pueden inscribir párvulos."
+            }
+            className="boton-menta text-sm py-2.5"
+          >
+            <Plus className="size-4" /> Agregar Párvulo
+          </button>
+        </div>
       </div>
 
       {/* Alerta de párvulos con asistencia < 75% */}
@@ -432,6 +452,14 @@ export default function VistaNominaParvulos({
           nombreNivel={nivelSeleccionado.nombre}
         />
       )}
+
+      {/* Modal para carga en bloque de párvulos */}
+      <ModalCargaMasivaParvulos
+        abierto={modalCargaMasivaAbierto}
+        alCerrar={() => setModalCargaMasivaAbierto(false)}
+        niveles={niveles}
+        nivelSeleccionado={nivelSeleccionado}
+      />
     </div>
   );
 }

@@ -286,6 +286,167 @@ export async function establecerPinApoderadoAction(
   return { ok: true, mensaje: res.mensaje || "PIN actualizado con éxito." };
 }
 
+function capitalizarTexto(texto: string): string {
+  return texto
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
+export interface DetalleParvuloParseado {
+  rut: string;
+  nombres: string;
+  apellidos: string;
+}
+
+export function parsearLineaParvulo(
+  linea: string,
+): { ok: true; dato: DetalleParvuloParseado } | { ok: false; error: string } {
+  const l = linea.trim();
+  if (!l) return { ok: false, error: "Línea vacía" };
+
+  const matchRut = l.match(/(\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK])/i);
+  if (!matchRut) {
+    return { ok: false, error: "No se encontró un RUT chileno en la línea" };
+  }
+
+  const rutEncontrado = matchRut[1];
+  if (!validarRut(rutEncontrado)) {
+    return {
+      ok: false,
+      error: `El RUT ${rutEncontrado} no es válido según el algoritmo chileno (Módulo 11)`,
+    };
+  }
+
+  const rutNormalizado = normalizarRut(rutEncontrado);
+  const resto = l.replace(matchRut[0], "").trim();
+
+  let apellidos = "";
+  let nombres = "";
+
+  if (resto.includes(",")) {
+    const [p1, ...p2] = resto.split(",");
+    apellidos = capitalizarTexto(p1.trim());
+    nombres = capitalizarTexto(p2.join(" ").trim());
+  } else if (resto.includes(";")) {
+    const [p1, ...p2] = resto.split(";");
+    apellidos = capitalizarTexto(p1.trim());
+    nombres = capitalizarTexto(p2.join(" ").trim());
+  } else if (resto.includes("\t")) {
+    const partes = resto.split("\t").filter(Boolean);
+    if (partes.length >= 2) {
+      apellidos = capitalizarTexto(partes[0].trim());
+      nombres = capitalizarTexto(partes.slice(1).join(" ").trim());
+    } else {
+      const palabras = resto.split(/\s+/).filter(Boolean);
+      apellidos = capitalizarTexto(palabras.slice(0, 2).join(" "));
+      nombres = capitalizarTexto(palabras.slice(2).join(" "));
+    }
+  } else {
+    const palabras = resto.split(/\s+/).filter(Boolean);
+    if (palabras.length >= 4) {
+      apellidos = capitalizarTexto(palabras.slice(0, 2).join(" "));
+      nombres = capitalizarTexto(palabras.slice(2).join(" "));
+    } else if (palabras.length === 3) {
+      apellidos = capitalizarTexto(palabras.slice(0, 2).join(" "));
+      nombres = capitalizarTexto(palabras[2]);
+    } else if (palabras.length === 2) {
+      apellidos = capitalizarTexto(palabras[0]);
+      nombres = capitalizarTexto(palabras[1]);
+    } else {
+      nombres = capitalizarTexto(resto);
+      apellidos = "Por Definir";
+    }
+  }
+
+  if (!nombres) {
+    return { ok: false, error: "No se pudieron identificar los nombres del alumno" };
+  }
+
+  return {
+    ok: true,
+    dato: {
+      rut: rutNormalizado,
+      nombres,
+      apellidos: apellidos || "Por Definir",
+    },
+  };
+}
+
+export async function importarParvulosEnBloque(
+  nivelId: string,
+  lineasTexto: string,
+): Promise<{
+  ok: boolean;
+  error?: string;
+  totalProcesados?: number;
+  insertados?: number;
+  fallidos?: { linea: string; motivo: string }[];
+}> {
+  const sesion = await obtenerSesion();
+  if (sesion.tipo !== "ok") {
+    return { ok: false, error: "No tienes una sesión activa autorizada." };
+  }
+
+  if (!nivelId) {
+    return { ok: false, error: "Debes seleccionar un nivel para asignar los párvulos." };
+  }
+
+  if (!puedeEditarNivel(sesion.perfil, nivelId)) {
+    return {
+      ok: false,
+      error: "No tienes permisos de edición sobre este nivel.",
+    };
+  }
+
+  const lineas = lineasTexto.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lineas.length === 0) {
+    return { ok: false, error: "No hay texto para procesar. Pega una lista de alumnos." };
+  }
+
+  const supabase = await createClient();
+  let insertados = 0;
+  const fallidos: { linea: string; motivo: string }[] = [];
+
+  for (const linea of lineas) {
+    const parseado = parsearLineaParvulo(linea);
+    if (!parseado.ok) {
+      fallidos.push({ linea, motivo: parseado.error });
+      continue;
+    }
+
+    const { rut, nombres, apellidos } = parseado.dato;
+
+    const { error } = await supabase.from("parvulos").upsert(
+      {
+        rut,
+        nombres,
+        apellidos,
+        nivel_id: nivelId,
+        activo: true,
+      },
+      { onConflict: "rut" },
+    );
+
+    if (error) {
+      fallidos.push({ linea, motivo: error.message });
+    } else {
+      insertados++;
+    }
+  }
+
+  revalidarRutas();
+
+  return {
+    ok: insertados > 0,
+    totalProcesados: lineas.length,
+    insertados,
+    fallidos,
+  };
+}
+
 function revalidarRutas() {
   revalidatePath("/dashboard/parvulos");
   revalidatePath("/dashboard/asistencia");
