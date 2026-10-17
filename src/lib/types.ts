@@ -368,3 +368,98 @@ export interface Publicacion {
   } | null;
 }
 
+export type EstamentoPersonal =
+  | "educadora"
+  | "tecnico_parvulos"
+  | "auxiliar"
+  | "cocinera"
+  | "directora"
+  | "administrativo";
+
+export type TipoContratoPersonal = "planta" | "contrata" | "reemplazo";
+
+export type EstadoPermiso = "pendiente" | "aprobado" | "rechazado";
+
+export const ETIQUETAS_ESTAMENTO: Record<EstamentoPersonal, string> = {
+  educadora: "Educadora de Párvulos",
+  tecnico_parvulos: "Técnico en Párvulos",
+  auxiliar: "Auxiliar de Servicios",
+  cocinera: "Manipuladora / Cocina",
+  directora: "Dirección / Jefatura",
+  administrativo: "Personal Administrativo",
+};
+
+export const ETIQUETAS_CONTRATO: Record<TipoContratoPersonal, string> = {
+  planta: "Planta",
+  contrata: "Contrata",
+  reemplazo: "Reemplazo",
+};
+
+export interface Funcionaria {
+  id: string;
+  rut: string;
+  nombres: string;
+  apellidos: string;
+  correo: string | null;
+  telefono: string | null;
+  estamento_rol: EstamentoPersonal;
+  tipo_contrato: TipoContratoPersonal;
+  activo: boolean;
+  fecha_ingreso: string;
+  dias_permiso_anual: number;
+  perfil_id?: string | null;
+  observaciones?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FuncionariaConSaldo extends Funcionaria {
+  nombre_completo: string;
+  total_dias_asignados: number;
+  periodo_ano: number;
+  dias_utilizados: number;
+  dias_pendientes: number;
+  dias_restantes: number;
+}
+
+export interface ReemplazoPersonal {
+  id: string;
+  titular_id: string;
+  reemplazante_nombre: string;
+  reemplazante_id: string | null;
+  motivo: string;
+  fecha_inicio: string;
+  fecha_termino: string;
+  observaciones: string | null;
+  activo: boolean;
+  created_at?: string;
+  updated_at?: string;
+  titular?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    rut: string;
+    estamento_rol: EstamentoPersonal;
+  } | null;
+}
+
+export interface SolicitudPermiso {
+  id: string;
+  funcionaria_id: string;
+  fecha_solicitada: string;
+  fecha_termino: string | null;
+  dias_solicitados: number;
+  estado: EstadoPermiso;
+  periodo_ano: number;
+  observaciones: string | null;
+  registrado_por: string | null;
+  created_at: string;
+  funcionaria?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    rut: string;
+    estamento_rol: EstamentoPersonal;
+  } | null;
+}
+
