@@ -307,7 +307,7 @@ export function parsearLineaParvulo(
   const l = linea.trim();
   if (!l) return { ok: false, error: "Línea vacía" };
 
-  const matchRut = l.match(/(\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK])/i);
+  const matchRut = l.match(/(\d{1,3}\.?\d{3}\.?\d{3}-?[0-9kK])/i);
   if (!matchRut) {
     return { ok: false, error: "No se encontró un RUT chileno en la línea" };
   }

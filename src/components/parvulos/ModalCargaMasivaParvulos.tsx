@@ -35,6 +35,27 @@ const LISTA_PREDEFINIDA_MEDIOS = `28159063-4  Baez Bustamante , Matilde Antonela
 28351534-6  VALDIVIA BUSTAMANTE, PAOLO IGNACIO
 28130987-0  Vilches Sanhueza, Catalina Belen`;
 
+const LISTA_PREDEFINIDA_TRANSICION = `100693333-1 BLANCO AMAYA, AMINA SAMANTHA
+27387440-2 BUSTAMANTE GODOY, JUAN PEDRO
+27486442-7 COBS CASTILLO, FLORENCIA ANDREA
+27340753-7 FERNANDEZ PIZARRO, LEONOR ALEJANDRA
+27740394-3 GARCÍA GALLARDO, DAVID NEHEMIAS
+27736470-0 LEIVA CRUZ, NATHAN JAVIER
+27273249-3 LEIVA PÉREZ, RENATO AGUSTÍN
+27463998-9 LÓPEZ FERNÁNDEZ, AMALIA BEATRIZ
+27694175-5 MATURANA PAZ, MÁXIMO ANDRÉS
+27620932-9 MOLINA ARAYA, ARANZA BELÉN
+27748993-7 MONDACA DURÁN, BRUNO ANDRÉS
+27262261-2 OJEDA LEIVA, TOMÁS ALEJANDRO
+27737170-7 OLIVARES QUIROZ, ROCÍO TRINIDAD
+27682314-0 PEREZ ACEVEDO, DEMIAN
+27672267-0 PIZARRO TAPIA, THIAGO RAMÓN
+27703564-2 PIZARRO AROS, MARIANO BASTIAN
+27299610-5 PRADO ACEVEDO, VICENTE ALONSO
+27553414-5 SOLÍS SEPÚLVEDA, SANTIAGO ALONSO
+27268510-K TAPIA VILLALOBOS, ISMAEL EMILIANO
+27668840-5 VERDEJO VEGA, CARLOS JAVIER`;
+
 export default function ModalCargaMasivaParvulos({
   abierto,
   alCerrar,
@@ -42,7 +63,7 @@ export default function ModalCargaMasivaParvulos({
   nivelSeleccionado,
 }: Props) {
   const [nivelId, setNivelId] = useState(nivelSeleccionado.id);
-  const [texto, setTexto] = useState(LISTA_PREDEFINIDA_MEDIOS);
+  const [texto, setTexto] = useState(LISTA_PREDEFINIDA_TRANSICION);
   const [isPending, startTransition] = useTransition();
   const [mensajeResultado, setMensajeResultado] = useState<{
     tipo: "exito" | "error";
@@ -92,8 +113,22 @@ export default function ModalCargaMasivaParvulos({
     });
   }
 
+  function cargarListaTransicion() {
+    setTexto(LISTA_PREDEFINIDA_TRANSICION);
+    setMensajeResultado(null);
+    const nivelTrans = niveles.find((n) => n.nombre.toLowerCase().includes("transici"));
+    if (nivelTrans) setNivelId(nivelTrans.id);
+  }
+
   function cargarListaMedios() {
     setTexto(LISTA_PREDEFINIDA_MEDIOS);
+    setMensajeResultado(null);
+    const nivelMedio = niveles.find((n) => n.nombre.toLowerCase().includes("medio"));
+    if (nivelMedio) setNivelId(nivelMedio.id);
+  }
+
+  function limpiarTexto() {
+    setTexto("");
     setMensajeResultado(null);
   }
 
@@ -126,20 +161,13 @@ export default function ModalCargaMasivaParvulos({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Selector de Nivel */}
           <div>
-            <label className="etiqueta flex items-center justify-between">
-              <span>Nivel al que se asignarán los alumnos:</span>
-              <button
-                type="button"
-                onClick={cargarListaMedios}
-                className="text-xs font-semibold text-cielo-600 hover:text-cielo-700 flex items-center gap-1 cursor-pointer"
-              >
-                <Sparkles className="size-3" /> Restaurar nómina de 12 párvulos
-              </button>
+            <label className="etiqueta block mb-1.5">
+              Nivel al que se asignarán los alumnos:
             </label>
             <select
               value={nivelId}
               onChange={(e) => setNivelId(e.target.value)}
-              className="entrada mt-1.5"
+              className="entrada"
             >
               {niveles.map((n) => (
                 <option key={n.id} value={n.id}>
@@ -149,11 +177,39 @@ export default function ModalCargaMasivaParvulos({
             </select>
           </div>
 
+          {/* Botones de Carga Rápida de Listas Recibidas */}
+          <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-cielo-50/70 border border-cielo-100 text-xs">
+            <span className="font-bold text-cielo-800 flex items-center gap-1">
+              <Sparkles className="size-3.5 text-cielo-600" /> Nóminas del Jardín:
+            </span>
+            <button
+              type="button"
+              onClick={cargarListaTransicion}
+              className="px-2.5 py-1 rounded-xl bg-white border border-cielo-200 text-cielo-700 font-semibold hover:bg-cielo-100 transition cursor-pointer shadow-2xs"
+            >
+              Cargar Transición (20 alumnos)
+            </button>
+            <button
+              type="button"
+              onClick={cargarListaMedios}
+              className="px-2.5 py-1 rounded-xl bg-white border border-cielo-200 text-cielo-700 font-semibold hover:bg-cielo-100 transition cursor-pointer shadow-2xs"
+            >
+              Cargar Medios (12 alumnos)
+            </button>
+            <button
+              type="button"
+              onClick={limpiarTexto}
+              className="px-2 py-1 rounded-xl text-tinta-suave hover:text-coral-600 hover:bg-white transition cursor-pointer ml-auto"
+            >
+              Limpiar
+            </button>
+          </div>
+
           {/* Área de Texto */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label htmlFor="area-nomina" className="etiqueta">
-                Pega aquí la lista de alumnos (un alumno por línea):
+                Lista de alumnos a importar:
               </label>
               <span className="text-xs text-tinta-suave">
                 Formato: <code className="bg-cielo-50 px-1 py-0.5 rounded text-cielo-700">RUT Apellidos, Nombres</code>
@@ -161,13 +217,13 @@ export default function ModalCargaMasivaParvulos({
             </div>
             <textarea
               id="area-nomina"
-              rows={6}
+              rows={7}
               value={texto}
               onChange={(e) => {
                 setTexto(e.target.value);
                 setMensajeResultado(null);
               }}
-              placeholder="Ejemplo:&#10;28159063-4  Baez Bustamante, Matilde Antonela&#10;28198063-7  BRICEÑO ACEVEDO, MATEO IGNACIO"
+              placeholder="Ejemplo:&#10;100693333-1 BLANCO AMAYA, AMINA SAMANTHA&#10;27387440-2 BUSTAMANTE GODOY, JUAN PEDRO"
               className="entrada font-mono text-xs leading-relaxed"
             />
           </div>

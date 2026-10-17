@@ -29,7 +29,7 @@ export function validarRut(valor: string): boolean {
   const cuerpo = limpio.slice(0, -1);
   const dv = limpio.slice(-1);
   if (!/^\d+$/.test(cuerpo)) return false;
-  if (cuerpo.length < 7 || cuerpo.length > 8) return false;
+  if (cuerpo.length < 7 || cuerpo.length > 9) return false;
   return calcularDv(cuerpo) === dv;
 }
 
@@ -37,7 +37,7 @@ export function formatearRut(valor: string): string {
   // La K solo es válida como último carácter (dígito verificador).
   let limpio = limpiarRut(valor);
   limpio = limpio.slice(0, -1).replace(/K/g, "") + limpio.slice(-1);
-  limpio = limpio.slice(0, 9);
+  limpio = limpio.slice(0, 10);
   if (limpio.length <= 1) return limpio;
   const cuerpo = limpio.slice(0, -1);
   const dv = limpio.slice(-1);
