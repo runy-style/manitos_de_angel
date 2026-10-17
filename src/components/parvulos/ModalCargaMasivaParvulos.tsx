@@ -11,7 +11,8 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { importarParvulosEnBloque, parsearLineaParvulo } from "@/app/actions/parvulos";
+import { importarParvulosEnBloque } from "@/app/actions/parvulos";
+import { parsearLineaParvulo } from "@/lib/parvulos-parser";
 import { formatearRut } from "@/lib/rut";
 import type { Nivel } from "@/lib/types";
 
