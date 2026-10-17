@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
+import { filtrarNivelesPorPerfil } from "@/lib/permisos";
 import VistaBitacora from "@/components/dashboard/bitacora/VistaBitacora";
 import type { EntradaBitacora, Nivel, Parvulo } from "@/lib/types";
 
@@ -19,27 +20,31 @@ export default async function PaginaBitacora(props: PaginaProps) {
   const sesion = await obtenerSesion();
   const supabase = await createClient();
 
-  // 1. Obtener todos los niveles
+  // 1. Obtener niveles y filtrar por perfil
   const { data: nivelesRaw } = await supabase
     .from("niveles")
     .select("id, nombre, descripcion")
     .order("nombre");
-  const niveles = (nivelesRaw ?? []) as Nivel[];
+  const todosLosNiveles = (nivelesRaw ?? []) as Nivel[];
+  const niveles = sesion.tipo === "ok" ? filtrarNivelesPorPerfil(todosLosNiveles, sesion.perfil) : todosLosNiveles;
 
   if (niveles.length === 0) {
     return (
       <div className="rounded-3xl bg-white p-8 text-center text-tinta">
-        <p className="font-bold">No hay niveles registrados en la base de datos.</p>
+        <p className="font-bold">
+          {sesion.tipo === "ok" && sesion.perfil.rol === "educadora"
+            ? "No tienes niveles asignados a tu cargo actualmente."
+            : "No hay niveles registrados en la base de datos."}
+        </p>
       </div>
     );
   }
 
-  // 2. Determinar el nivel seleccionado
+  // 2. Determinar el nivel seleccionado dentro de los visibles
   const nivelSeleccionadoId =
-    searchParams.nivelId ||
-    (sesion.tipo === "ok" && sesion.perfil.rol === "educadora" && sesion.perfil.nivel_id
-      ? sesion.perfil.nivel_id
-      : niveles[0].id);
+    searchParams.nivelId && niveles.some((n) => n.id === searchParams.nivelId)
+      ? searchParams.nivelId
+      : niveles[0].id;
 
   const nivelActual =
     niveles.find((n) => n.id === nivelSeleccionadoId) ?? niveles[0];

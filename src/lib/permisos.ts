@@ -31,3 +31,26 @@ export function puedeEditarNivel(
 
   return false;
 }
+
+/**
+ * Filtra la lista de niveles según el perfil:
+ * - Admin y Organización: ven todos los niveles del jardín.
+ * - Educadora: ve ÚNICAMENTE sus niveles asignados a cargo (ocultando los demás).
+ */
+export function filtrarNivelesPorPerfil<T extends { id: string }>(
+  niveles: T[],
+  perfil:
+    | (Pick<Perfil, "rol" | "nivel_id"> & {
+        niveles?: { id: string }[];
+        niveles_ids?: string[];
+      })
+    | null
+    | undefined,
+): T[] {
+  if (!perfil) return [];
+  if (perfil.rol === "admin" || perfil.rol === "organizacion") {
+    return niveles;
+  }
+  // Para educadora: solo los niveles a cargo
+  return niveles.filter((n) => puedeEditarNivel(perfil, n.id));
+}

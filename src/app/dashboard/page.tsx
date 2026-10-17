@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
-import { puedeEditarNivel } from "@/lib/permisos";
+import { puedeEditarNivel, filtrarNivelesPorPerfil } from "@/lib/permisos";
 import type { Nivel } from "@/lib/types";
 import BotonEdicion from "@/components/dashboard/BotonEdicion";
 import InsigniaRol from "@/components/dashboard/InsigniaRol";
@@ -43,6 +43,8 @@ export default async function PanelInicio() {
     supabase.from("niveles").select("id, nombre, descripcion").order("created_at").returns<Nivel[]>(),
     supabase.from("parvulos").select("nivel_id").eq("activo", true).returns<{ nivel_id: string }[]>(),
   ]);
+
+  const nivelesVisibles = filtrarNivelesPorPerfil(niveles ?? [], perfil);
 
   const conteo = new Map<string, number>();
   parvulos?.forEach((p) => conteo.set(p.nivel_id, (conteo.get(p.nivel_id) ?? 0) + 1));
@@ -110,7 +112,7 @@ export default async function PanelInicio() {
             {esAdmin
               ? "Administrador del Sistema — Permisos Totales"
               : esEducadora
-              ? "Puedes editar tus niveles asignados"
+              ? "Acceso exclusivo a tus niveles asignados"
               : "Modo solo lectura"}
           </h2>
           <p className="text-sm text-tinta-suave">
@@ -118,9 +120,9 @@ export default async function PanelInicio() {
               ? "Tienes permisos completos para inscribir párvulos, registrar asistencia, bitácoras y gestionar archivos en todos los niveles del jardín infantil."
               : esEducadora
               ? perfil.niveles && perfil.niveles.length > 0
-                ? `Registras asistencia, bitácoras, planificaciones y archivos de: ${perfil.niveles.map((n) => n.nombre).join(", ")}. Los demás niveles los ves en solo lectura.`
+                ? `Tienes asignado: ${perfil.niveles.map((n) => n.nombre).join(", ")}. Aquí gestionas la asistencia, bitácoras, planificaciones y nómina de tus párvulos.`
                 : perfil.nivel
-                ? `Registras asistencia, bitácoras, planificaciones y archivos de ${perfil.nivel.nombre}. Los demás niveles los ves en solo lectura.`
+                ? `Tienes asignado: ${perfil.nivel.nombre}. Aquí gestionas la asistencia, bitácoras, planificaciones y nómina de tus párvulos.`
                 : "Aún no tienes un nivel asignado. Pide a la administración que lo configure en tu perfil."
               : "Puedes revisar todos los niveles, estadísticas, bitácoras y planificaciones del jardín, sin modificar los registros de las educadoras."}
           </p>
@@ -130,17 +132,30 @@ export default async function PanelInicio() {
       {/* Niveles */}
       <section className="space-y-4">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-semibold">Niveles del jardín</h2>
-          <p className="text-sm text-tinta-suave">{niveles?.length ?? 0} niveles</p>
+          <h2 className="text-2xl font-semibold">
+            {esEducadora ? "Tus niveles a cargo" : "Niveles del jardín"}
+          </h2>
+          <p className="text-sm text-tinta-suave">
+            {nivelesVisibles.length}{" "}
+            {nivelesVisibles.length === 1
+              ? esEducadora
+                ? "nivel a cargo"
+                : "nivel"
+              : esEducadora
+              ? "niveles a cargo"
+              : "niveles"}
+          </p>
         </div>
 
-        {!niveles?.length ? (
+        {!nivelesVisibles.length ? (
           <p className="tarjeta-vidrio p-6 text-center text-tinta-suave">
-            No hay niveles registrados todavía. Ejecuta el script SQL inicial en Supabase.
+            {esEducadora
+              ? "No tienes niveles asignados actualmente. Pide a la administración que configure tus niveles."
+              : "No hay niveles registrados todavía."}
           </p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {niveles.map((nivel, i) => {
+            {nivelesVisibles.map((nivel, i) => {
               const editable = puedeEditarNivel(perfil, nivel.id);
               const color = COLORES_NIVEL[i % COLORES_NIVEL.length];
               return (

@@ -5,6 +5,7 @@ import SelectorNivel from "@/components/dashboard/SelectorNivel";
 import PanelLicenciasEducadora from "@/components/licencias/PanelLicenciasEducadora";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerSesion } from "@/lib/sesion";
+import { filtrarNivelesPorPerfil } from "@/lib/permisos";
 import type { LicenciaMedica, Nivel } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -25,29 +26,37 @@ export default async function PaginaLicencias(props: PaginaLicenciasProps) {
   const supabase = await createClient();
 
   // 1. Cargar niveles
-  const { data: niveles } = await supabase
+  const { data: nivelesRaw } = await supabase
     .from("niveles")
     .select("id, nombre, descripcion")
     .order("created_at")
     .returns<Nivel[]>();
 
+  const niveles = filtrarNivelesPorPerfil(nivelesRaw ?? [], sesion.perfil);
+
   if (!niveles || niveles.length === 0) {
     return (
       <div className="tarjeta-vidrio p-12 text-center text-tinta-suave">
         <Users className="mx-auto mb-3 size-12 text-cielo-300" />
-        <h2 className="text-xl font-bold text-tinta">No hay niveles registrados</h2>
-        <p className="mt-2 text-sm">Ejecuta el script SQL en Supabase para crear los niveles.</p>
+        <h2 className="text-xl font-bold text-tinta">
+          {sesion.perfil.rol === "educadora"
+            ? "No tienes niveles asignados"
+            : "No hay niveles registrados"}
+        </h2>
+        <p className="mt-2 text-sm">
+          {sesion.perfil.rol === "educadora"
+            ? "Pide a la administración que asigne tu nivel a cargo en tu perfil."
+            : "Ejecuta el script SQL en Supabase para crear los niveles."}
+        </p>
       </div>
     );
   }
 
-  // 2. Determinar nivel seleccionado
+  // 2. Determinar nivel seleccionado dentro de los visibles
   const nivelParam = typeof searchParams.nivel === "string" ? searchParams.nivel : undefined;
   const nivelSeleccionadoId =
     nivelParam && niveles.some((n) => n.id === nivelParam)
       ? nivelParam
-      : sesion.perfil.nivel_id && niveles.some((n) => n.id === sesion.perfil.nivel_id)
-      ? sesion.perfil.nivel_id
       : niveles[0].id;
 
   const nivelSeleccionado = niveles.find((n) => n.id === nivelSeleccionadoId)!;
