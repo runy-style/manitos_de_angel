@@ -74,13 +74,19 @@ begin
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-    created_at, updated_at, confirmation_token
+    created_at, updated_at,
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token
   ) values (
     '00000000-0000-0000-0000-000000000000', v_user_id, 'authenticated', 'authenticated',
     lower(trim(p_email)), v_encrypted_pw, now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
-    jsonb_build_object('nombre_completo', p_nombre),
-    now(), now(), ''
+    jsonb_build_object('nombre_completo', p_nombre, 'rol', p_rol),
+    now(), now(),
+    '', '',
+    '', '', '',
+    '', '', ''
   );
 
   insert into auth.identities (
@@ -93,7 +99,11 @@ begin
   );
 
   insert into public.perfiles (id, nombre_completo, email, rol, nivel_id)
-  values (v_user_id, trim(p_nombre), lower(trim(p_email)), p_rol, p_nivel_id);
+  values (v_user_id, trim(p_nombre), lower(trim(p_email)), p_rol, p_nivel_id)
+  on conflict (id) do update set
+    nombre_completo = excluded.nombre_completo,
+    rol = excluded.rol,
+    nivel_id = excluded.nivel_id;
 
   return jsonb_build_object('ok', true, 'user_id', v_user_id);
 end;
@@ -128,6 +138,7 @@ begin
   update auth.users
   set encrypted_password = v_encrypted_pw,
       confirmation_token = '',
+      recovery_token = '',
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       updated_at = now()
   where id = p_user_id;
