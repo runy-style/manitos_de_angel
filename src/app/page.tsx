@@ -78,18 +78,20 @@ export default async function Inicio(props: InicioProps) {
 
       {/* Barra superior */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-3" id="logo-inicio">
-          <Image
-            src="/img/logo-manitos.jpg"
-            alt="Logo Jardín Infantil Manitos de Ángel"
-            width={56}
-            height={56}
-            priority
-            className="size-12 rounded-2xl bg-white object-cover shadow-suave sm:size-14"
-          />
+        <Link href="/" className="group flex items-center gap-3.5 transition-transform hover:scale-[1.01]" id="logo-inicio">
+          <div className="relative size-12 sm:size-14 rounded-full p-1 bg-white shadow-suave border border-cielo-100 flex items-center justify-center transition-all group-hover:shadow-md group-hover:border-cielo-300">
+            <Image
+              src="/img/logo-manitos.png"
+              alt="Logo Jardín Infantil y Sala Cuna Manitos de Ángel"
+              width={64}
+              height={64}
+              priority
+              className="size-full rounded-full object-contain"
+            />
+          </div>
           <span className="leading-tight">
-            <span className="block text-[0.7rem] font-bold uppercase tracking-[0.2em] text-cielo-600">
-              Jardín Infantil
+            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.2em] text-cielo-600">
+              Jardín Infantil y Sala Cuna
             </span>
             <span className="block font-display text-xl font-semibold text-tinta sm:text-2xl">
               Manitos de Ángel
@@ -190,8 +192,25 @@ export default async function Inicio(props: InicioProps) {
         </section>
       </main>
 
-      <footer className="border-t border-cielo-100 bg-white/60 py-6 text-center text-sm text-tinta-suave backdrop-blur">
-        © {new Date().getFullYear()} Jardín Infantil Manitos de Ángel · Hecho con cariño para nuestras familias
+      <footer className="border-t border-cielo-100 bg-white/80 py-8 text-center text-sm text-tinta-suave backdrop-blur flex flex-col items-center gap-3">
+        <div className="flex items-center gap-3">
+          <div className="size-11 rounded-full p-1 bg-white border border-cielo-100 shadow-xs flex items-center justify-center">
+            <Image
+              src="/img/logo-manitos.png"
+              alt="Logo Jardín Infantil y Sala Cuna Manitos de Ángel"
+              width={44}
+              height={44}
+              className="size-full rounded-full object-contain"
+            />
+          </div>
+          <div className="text-left leading-tight">
+            <p className="font-display font-semibold text-tinta">Jardín Infantil y Sala Cuna Manitos de Ángel</p>
+            <p className="text-xs text-tinta-suave">Educación y calidez humana para nuestras familias</p>
+          </div>
+        </div>
+        <p className="text-xs text-tinta-suave/80">
+          © {new Date().getFullYear()} Jardín Infantil y Sala Cuna Manitos de Ángel · Todos los derechos reservados
+        </p>
       </footer>
     </div>
   );

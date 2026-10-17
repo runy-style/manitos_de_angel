@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { obtenerLogoBytes } from "./logo-institucional";
 
 export interface DatosActaEntrevista {
   nombreParvulo: string;
@@ -65,51 +66,118 @@ export async function generarPdfActaEntrevistaBytes(
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
   const azulPrincipal = rgb(0.12, 0.44, 0.65); // #1e70a6
-  const azulClaro = rgb(0.92, 0.96, 0.99); // #eaf4fc
+  const azulOscuro = rgb(0.08, 0.28, 0.45);
+  const azulClaro = rgb(0.94, 0.97, 1.0); // #f0f7fd
   const grisTexto = rgb(0.2, 0.2, 0.2);
   const grisBorde = rgb(0.8, 0.85, 0.9);
 
-  let y = height - 50;
+  let y = height - 45;
 
-  // 1. Encabezado institucional
+  // Intentar incrustar el logo oficial del jardín
+  let logoPdfImage = null;
+  try {
+    const bytesLogo = obtenerLogoBytes();
+    if (bytesLogo && bytesLogo.length > 0) {
+      logoPdfImage = await doc.embedJpg(bytesLogo);
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar el logo oficial para el PDF del acta:", err);
+  }
+
+  // 1. Encabezado institucional con diseño oficial
+  const headerHeight = 74;
   page.drawRectangle({
     x: 40,
-    y: y - 55,
+    y: y - headerHeight,
     width: width - 80,
-    height: 65,
+    height: headerHeight,
     color: azulClaro,
     borderColor: grisBorde,
     borderWidth: 1,
   });
 
-  page.drawText("JARDÍN INFANTIL MANITOS DE ÁNGEL", {
-    x: 55,
-    y: y - 20,
-    size: 14,
+  // Si el logo está presente, dibujarlo en el costado izquierdo con fondo blanco circular/limpio
+  let textoInicioX = 55;
+  if (logoPdfImage) {
+    const logoSize = 60;
+    const logoX = 48;
+    const logoY = y - headerHeight + 7;
+
+    // Fondo blanco del logo
+    page.drawRectangle({
+      x: logoX,
+      y: logoY,
+      width: logoSize,
+      height: logoSize,
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.88, 0.92, 0.96),
+      borderWidth: 1,
+    });
+
+    page.drawImage(logoPdfImage, {
+      x: logoX + 1,
+      y: logoY + 1,
+      width: logoSize - 2,
+      height: logoSize - 2,
+    });
+
+    textoInicioX = 118;
+  }
+
+  page.drawText("JARDÍN INFANTIL Y SALA CUNA", {
+    x: textoInicioX,
+    y: y - 18,
+    size: 8.5,
     font: fontBold,
     color: azulPrincipal,
   });
 
-  page.drawText("ACTA OFICIAL DE ENTREVISTA CON APODERADO", {
-    x: 55,
-    y: y - 36,
-    size: 11,
+  page.drawText("MANITOS DE ÁNGEL", {
+    x: textoInicioX,
+    y: y - 32,
+    size: 13.5,
     font: fontBold,
-    color: rgb(0.3, 0.3, 0.3),
+    color: azulOscuro,
+  });
+
+  page.drawText("ACTA OFICIAL DE ENTREVISTA CON APODERADO", {
+    x: textoInicioX,
+    y: y - 48,
+    size: 10,
+    font: fontBold,
+    color: rgb(0.25, 0.25, 0.25),
   });
 
   page.drawText(
-    `Fecha de Emisión: ${datos.fecha} · Hora: ${datos.hora} hrs · Modalidad: ${datos.modalidad.toUpperCase()}`,
+    `Fecha: ${datos.fecha}   |   Hora: ${datos.hora} hrs   |   Modalidad: ${datos.modalidad.toUpperCase()}`,
     {
-      x: 55,
-      y: y - 50,
-      size: 8.5,
+      x: textoInicioX,
+      y: y - 62,
+      size: 8,
       font: fontRegular,
-      color: rgb(0.4, 0.4, 0.4),
+      color: rgb(0.42, 0.42, 0.42),
     },
   );
 
-  y -= 75;
+  // Insignia / sello de documento oficial a la derecha
+  page.drawRectangle({
+    x: width - 150,
+    y: y - 32,
+    width: 95,
+    height: 18,
+    color: rgb(1, 1, 1),
+    borderColor: rgb(0.75, 0.83, 0.9),
+    borderWidth: 1,
+  });
+  page.drawText("FOLIO OFICIAL", {
+    x: width - 136,
+    y: y - 25,
+    size: 7,
+    font: fontBold,
+    color: azulPrincipal,
+  });
+
+  y -= headerHeight + 20;
 
   // 2. Tarjeta Identificación del Párvulo
   const datosParvulo = [
@@ -295,7 +363,7 @@ export async function generarPdfActaEntrevistaBytes(
 
   // Pie de página
   page.drawText(
-    "Acta generada por la Plataforma Digital · Jardín Infantil Manitos de Ángel · Registro oficial en Google Drive",
+    "Acta generada por la Plataforma Digital · Jardín Infantil y Sala Cuna Manitos de Ángel · Registro oficial en Google Drive",
     {
       x: 75,
       y: 25,

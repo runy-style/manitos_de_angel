@@ -55,8 +55,8 @@ export default function MenuLateral() {
     <>
       {/* Barra superior móvil */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-cielo-100 bg-white/85 px-4 py-3 backdrop-blur lg:hidden">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <Image src="/img/logo-manitos.jpg" alt="Logo" width={40} height={40} className="size-10 rounded-xl" />
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Image src="/img/logo-manitos.png" alt="Logo" width={40} height={40} className="size-10 rounded-full bg-white object-contain p-0.5 border border-cielo-100 shadow-xs" />
           <span className="font-display text-lg font-semibold">Manitos de Ángel</span>
         </Link>
         <button
@@ -86,9 +86,11 @@ export default function MenuLateral() {
       >
         <div className="mb-8 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <Image src="/img/logo-manitos.jpg" alt="Logo Manitos de Ángel" width={48} height={48} className="size-12 rounded-2xl shadow-suave" />
+            <div className="size-12 rounded-full p-0.5 bg-white border border-cielo-100 shadow-suave flex items-center justify-center">
+              <Image src="/img/logo-manitos.png" alt="Logo Manitos de Ángel" width={48} height={48} className="size-full rounded-full object-contain" />
+            </div>
             <span className="leading-tight">
-              <span className="block text-[0.65rem] font-bold uppercase tracking-[0.2em] text-cielo-600">Jardín Infantil</span>
+              <span className="block text-[0.62rem] font-bold uppercase tracking-[0.2em] text-cielo-600">Jardín Infantil y Sala Cuna</span>
               <span className="block font-display text-lg font-semibold">Manitos de Ángel</span>
             </span>
           </Link>

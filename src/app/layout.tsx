@@ -3,12 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Jardín Infantil Manitos de Ángel",
+    default: "Jardín Infantil y Sala Cuna Manitos de Ángel",
     template: "%s · Manitos de Ángel",
   },
   description:
-    "Plataforma del Jardín Infantil Manitos de Ángel: asistencia, bitácoras de avance, planificaciones y portal de consulta para apoderados.",
-  icons: { icon: "/img/logo-manitos.jpg" },
+    "Plataforma oficial del Jardín Infantil y Sala Cuna Manitos de Ángel: asistencia, bitácoras de avance, planificaciones y portal para familias.",
+  icons: { icon: "/img/logo-manitos.png" },
 };
 
 export const viewport: Viewport = {

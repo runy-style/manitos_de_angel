@@ -62,16 +62,18 @@ export default async function PaginaApoderado(props: PaginaProps) {
       <header className="print:hidden border-b border-cielo-100 bg-white/80 px-4 py-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/img/logo-manitos.jpg"
-              alt="Logo Jardín Infantil Manitos de Ángel"
-              width={48}
-              height={48}
-              className="size-11 rounded-2xl object-cover shadow-suave"
-            />
+            <div className="size-11 rounded-full p-0.5 bg-white border border-cielo-100 shadow-suave flex items-center justify-center">
+              <Image
+                src="/img/logo-manitos.png"
+                alt="Logo Jardín Infantil y Sala Cuna Manitos de Ángel"
+                width={48}
+                height={48}
+                className="size-full rounded-full object-contain"
+              />
+            </div>
             <span className="leading-tight">
-              <span className="block text-[0.65rem] font-bold uppercase tracking-[0.2em] text-cielo-600">
-                Jardín Infantil
+              <span className="block text-[0.62rem] font-bold uppercase tracking-[0.2em] text-cielo-600">
+                Jardín Infantil y Sala Cuna
               </span>
               <span className="block font-display text-lg font-semibold text-tinta">
                 Manitos de Ángel
@@ -90,16 +92,18 @@ export default async function PaginaApoderado(props: PaginaProps) {
         {/* Cabecera institucional imprimible */}
         <div className="hidden print:flex items-center justify-between border-b-2 border-cielo-200 pb-4 mb-6">
           <div className="flex items-center gap-3">
-            <Image
-              src="/img/logo-manitos.jpg"
-              alt="Logo Jardín Infantil Manitos de Ángel"
-              width={56}
-              height={56}
-              className="size-14 rounded-xl object-cover"
-            />
+            <div className="size-14 rounded-full p-0.5 bg-white border border-cielo-200 flex items-center justify-center">
+              <Image
+                src="/img/logo-manitos.png"
+                alt="Logo Jardín Infantil y Sala Cuna Manitos de Ángel"
+                width={56}
+                height={56}
+                className="size-full rounded-full object-contain"
+              />
+            </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-cielo-600">
-                Jardín Infantil Manitos de Ángel
+                Jardín Infantil y Sala Cuna Manitos de Ángel
               </p>
               <h1 className="text-xl font-bold font-display text-tinta">
                 Informe Pedagógico y de Asistencia
